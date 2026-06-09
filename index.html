@@ -21,7 +21,6 @@ var ADDIN_CONFIG = {
     serviceId:  'service_9jj0dzl',
     templateId: 'template_pkr52on'
   },
-  // Tus 3 IDs específicos de reglas Surfsight
   ruleIds: {
     distraccion: 'aBXYDBONKj06ICT7iWdcAUw',
     celular:     'adJUc__QkwkCk-YXR84_TxA',
@@ -104,17 +103,12 @@ var ADDIN_CONFIG = {
   function debugLog(msg) {
     var el = document.getElementById('debug-log');
     if (el) {
-      var time = new Date().toLocaleTimeString();
-      el.textContent += '[' + time + '] ' + msg + '\n';
-      el.scrollTop = el.scrollHeight;
+      el.textContent += '[' + new Date().toLocaleTimeString() + '] ' + msg + '\n';
     }
   }
 
   function debugSample(key, arr) {
-    _debugData[key] = {
-      total: arr.length,
-      sample: arr.slice(0, 10)
-    };
+    _debugData[key] = { total: arr.length, sample: arr.slice(0, 10) };
   }
 
   window.copyDebugData = function() {
@@ -130,66 +124,45 @@ var ADDIN_CONFIG = {
   if (!window.geotab)       { window.geotab = {}; }
   if (!window.geotab.addin) { window.geotab.addin = {}; }
 
-  // Definición unificada del ciclo de vida del Add-In externo
   var addInDefinition = function(api, state) {
     geotabApi = api;
     return {
       initialize: function(freshApi, freshState, callback) {
         geotabApi = freshApi;
-        debugLog('Add-In enlazado correctamente con MyGeotab.');
-        if (window.emailjs) { 
-          emailjs.init(ADDIN_CONFIG.emailjs.publicKey); 
-        }
-        
-        // ¡CRÍTICO! Notifica que la carga terminó para evitar el letrero gris
+        debugLog('Add-In enlazado externamente.');
+        if (window.emailjs) { emailjs.init(ADDIN_CONFIG.emailjs.publicKey); }
         callback(); 
       },
       focus: function(freshApi, freshState) {
         geotabApi = freshApi;
         document.getElementById('lblGroup').textContent = ADDIN_CONFIG.groupName;
-        resolveMetadata(function() { runCheck(); startAutoRefresh(); });
+        resolveGroupId(function() { runCheck(); startAutoRefresh(); });
       },
-      blur: function() { 
-        stopAutoRefresh(); 
-      }
+      blur: function() { stopAutoRefresh(); }
     };
   };
 
-  // Doble registro preventivo para emparejar con cualquier llamada del validador
   window.geotab.addin.monitorFatigaDistraccion = addInDefinition;
   window.geotab.addin['monitor-fatiga-v06'] = addInDefinition;
 
-  function resolveMetadata(onSuccess) {
-    if (groupId && Object.keys(deviceCache).length > 0) {
-      onSuccess();
-      return;
-    }
-    setStatus('loading', 'Sincronizando activos...');
+  // Optimización: Solo resolvemos el ID del grupo, no cargamos miles de vehículos aquí
+  function resolveGroupId(onSuccess) {
+    if (groupId) { onSuccess(); return; }
+    setStatus('loading', 'Resolviendo grupo...');
     
-    geotabApi.multiCall([
-      ['Get', { typeName: 'Group', search: {} }],
-      ['Get', { typeName: 'Device', search: {} }]
-    ], function(results) {
-      var groups = results[0];
+    geotabApi.call('Get', { typeName: 'Group', search: {} }, function(groups) {
       var match = (groups || []).find(function(g) {
         return g.name && g.name.toLowerCase() === ADDIN_CONFIG.groupName.toLowerCase();
       });
-      
       if (match) {
         groupId = match.id;
-        debugLog('Grupo objetivo mapeado: ' + groupId);
+        debugLog('Grupo ID resuelto: ' + groupId);
+        onSuccess();
       } else {
         setStatus('error', 'Grupo "' + ADDIN_CONFIG.groupName + '" no encontrado.');
-        return;
       }
-
-      var devices = results[1] || [];
-      devices.forEach(function(d) { deviceCache[d.id] = d.name || d.id; });
-      debugLog('Dispositivos cargados a memoria: ' + devices.length);
-
-      onSuccess();
     }, function(err) {
-      setStatus('error', 'Falla multiCall inicial: ' + (err.message || err));
+      setStatus('error', 'Error al buscar grupo: ' + (err.message || err));
     });
   }
 
@@ -224,7 +197,7 @@ var ADDIN_CONFIG = {
       }
     },
     function(events) {
-      debugLog('Eventos crudos evaluados: ' + events.length);
+      debugLog('Eventos crudos recibidos: ' + events.length);
       debugSample('rawExceptionEvents', events);
 
       if (!events || events.length === 0) {
@@ -234,61 +207,92 @@ var ADDIN_CONFIG = {
         updateLastCheck(now); return;
       }
 
-      // Filtrado directo de alto desempeño por ID estricto
       var filtered = events.filter(function(e) {
         return e.rule && e.rule.id && targetRuleIds.indexOf(e.rule.id) !== -1;
       });
 
       var byDevice = {};
+      var missingDeviceIds = [];
+
       filtered.forEach(function(e) {
         var devId = e.device && e.device.id;
         if (!devId) return;
         
-        if (!byDevice[devId]) byDevice[devId] = {
-          deviceId: devId, deviceName: deviceCache[devId] || devId, total: 0,
-          counts: { distraccion: 0, celular: 0, bostezo: 0 }
-        };
+        if (!byDevice[devId]) {
+          byDevice[devId] = {
+            deviceId: devId,
+            deviceName: deviceCache[devId] || devId, // Si ya está en caché, lo usa
+            total: 0,
+            counts: { distraccion: 0, celular: 0, bostezo: 0 }
+          };
+          if (!deviceCache[devId] && missingDeviceIds.indexOf(devId) === -1) {
+            missingDeviceIds.push(devId);
+          }
+        }
         
         byDevice[devId].total++;
         var rid = e.rule.id;
-        
         if (rid === ADDIN_CONFIG.ruleIds.distraccion) byDevice[devId].counts.distraccion++;
         else if (rid === ADDIN_CONFIG.ruleIds.celular) byDevice[devId].counts.celular++;
         else if (rid === ADDIN_CONFIG.ruleIds.bostezo) byDevice[devId].counts.bostezo++;
       });
 
-      var deviceIds = Object.keys(byDevice);
-      if (deviceIds.length === 0) {
-        setStatus('ok', 'Cero incidencias en las 3 reglas objetivo');
-        updateStats(events.length, 0, 0); renderTable([]); clearAlerts();
-        document.getElementById('btnCheck').disabled = false; updateLastCheck(now); return;
+      // Optimización bajo volumen: Si faltan nombres de vehículos, los busca bajo demanda
+      if (missingDeviceIds.length > 0) {
+        var calls = missingDeviceIds.map(function(id) {
+          return ['Get', { typeName: 'Device', search: { id: id } }];
+        });
+        
+        geotabApi.multiCall(calls, function(deviceResults) {
+          deviceResults.forEach(function(res) {
+            if (res && res[0]) {
+              var d = res[0];
+              deviceCache[d.id] = d.name || d.id;
+              if (byDevice[d.id]) byDevice[d.id].deviceName = d.name || d.id;
+            }
+          });
+          finalizeProcess(byDevice, filtered.length, now);
+        }, function() {
+          finalizeProcess(byDevice, filtered.length, now);
+        });
+      } else {
+        finalizeProcess(byDevice, filtered.length, now);
       }
-
-      tableData = deviceIds.map(function(id) { return byDevice[id]; });
-      tableData.sort(function(a, b) { return b.total - a.total; });
-
-      var alertVehicles = tableData.filter(function(v) { return v.total >= ADDIN_CONFIG.alertThreshold; });
-      updateStats(filtered.length, tableData.length, alertVehicles.length);
-      renderTable(tableData);
-      renderAlerts(alertVehicles, now);
-
-      alertVehicles.forEach(function(v) {
-        var last = alertsSent[v.deviceId];
-        if (!last || (Date.now() - last) > 3600000) {
-          sendAlertEmail(v, now);
-          alertsSent[v.deviceId] = Date.now();
-        }
-      });
-
-      setStatus(alertVehicles.length > 0 ? 'warn' : 'ok', alertVehicles.length > 0 ? 'Operadores críticos detectados' : 'Monitoreo estable — Flota OK');
-      document.getElementById('btnCheck').disabled = false;
-      updateLastCheck(now);
     },
     function(err) {
       setStatus('error', 'Error API: ' + (err.message || err));
       document.getElementById('btnCheck').disabled = false;
     });
   };
+
+  function finalizeProcess(byDevice, filteredCount, now) {
+    var deviceIds = Object.keys(byDevice);
+    if (deviceIds.length === 0) {
+      setStatus('ok', 'Cero incidencias en las 3 reglas');
+      updateStats(filteredCount, 0, 0); renderTable([]); clearAlerts();
+      document.getElementById('btnCheck').disabled = false; updateLastCheck(now); return;
+    }
+
+    tableData = deviceIds.map(function(id) { return byDevice[id]; });
+    tableData.sort(function(a, b) { return b.total - a.total; });
+
+    var alertVehicles = tableData.filter(function(v) { return v.total >= ADDIN_CONFIG.alertThreshold; });
+    updateStats(filteredCount, tableData.length, alertVehicles.length);
+    renderTable(tableData);
+    renderAlerts(alertVehicles, now);
+
+    alertVehicles.forEach(function(v) {
+      var last = alertsSent[v.deviceId];
+      if (!last || (Date.now() - last) > 3600000) {
+        sendAlertEmail(v, now);
+        alertsSent[v.deviceId] = Date.now();
+      }
+    });
+
+    setStatus(alertVehicles.length > 0 ? 'warn' : 'ok', alertVehicles.length > 0 ? 'Operadores críticos detectados' : 'Monitoreo estable — Flota OK');
+    document.getElementById('btnCheck').disabled = false;
+    updateLastCheck(now);
+  }
 
   function renderTable(data) {
     var container = document.getElementById('tableContainer');
