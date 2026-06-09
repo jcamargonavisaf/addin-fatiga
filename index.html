@@ -130,18 +130,18 @@ var ADDIN_CONFIG = {
   if (!window.geotab)       { window.geotab = {}; }
   if (!window.geotab.addin) { window.geotab.addin = {}; }
 
-  // Nombre de firma exacto vinculado a la inicialización externa
-  window.geotab.addin.monitorFatigaDistraccion = function(api, state) {
+  // Definición unificada del ciclo de vida del Add-In externo
+  var addInDefinition = function(api, state) {
     geotabApi = api;
     return {
       initialize: function(freshApi, freshState, callback) {
         geotabApi = freshApi;
-        debugLog('Add-In cargado de forma externa con éxito.');
+        debugLog('Add-In enlazado correctamente con MyGeotab.');
         if (window.emailjs) { 
           emailjs.init(ADDIN_CONFIG.emailjs.publicKey); 
         }
         
-        // ¡CRÍTICO! Informa a MyGeotab que la carga fue exitosa para quitar el letrero gris de error
+        // ¡CRÍTICO! Notifica que la carga terminó para evitar el letrero gris
         callback(); 
       },
       focus: function(freshApi, freshState) {
@@ -154,6 +154,10 @@ var ADDIN_CONFIG = {
       }
     };
   };
+
+  // Doble registro preventivo para emparejar con cualquier llamada del validador
+  window.geotab.addin.monitorFatigaDistraccion = addInDefinition;
+  window.geotab.addin['monitor-fatiga-v06'] = addInDefinition;
 
   function resolveMetadata(onSuccess) {
     if (groupId && Object.keys(deviceCache).length > 0) {
@@ -315,7 +319,6 @@ var ADDIN_CONFIG = {
       var emailBadge = alertsSent[v.deviceId] ? ' <span style="background:#d5f5e3; color:#1a7a3c; padding:2px 6px; border-radius:10px; font-size:9px; font-weight:600; margin-left:4px;">📧 Correo</span>' : '';
 
       html += '<tr style="' + rowBg + '" data-name="' + escHtml(v.deviceName.toLowerCase()) + '">';
-      // Enlace dinámico directo al mapa/perfil de MyGeotab
       html += '<td style="padding:10px 14px; font-size:12px; border-bottom:1px solid #eee;"><a href="#" onclick="event.preventDefault(); window.parent.location.hash=\'device,id:\'+\'' + v.deviceId + '\';" style="color:#2563eb; font-weight:bold; cursor:pointer; text-decoration:underline;">' + escHtml(v.deviceName) + '</a></td>';
       html += '<td style="padding:10px 14px; font-size:12px; border-bottom:1px solid #eee; font-weight:700; font-size:15px; ' + numColor + '">' + v.total + '</td>';
       html += '<td style="padding:10px 14px; font-size:12px; border-bottom:1px solid #eee;">' + v.counts.distraccion + '</td>';
