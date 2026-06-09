@@ -1,15 +1,15 @@
 {
-  "name": "Monitor Fatiga y Distracción",
-  "supportEmail": "jcamargo@navisaf.com",
+  "name": "Monitor Fatigue and Distraction External v04",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
+  "version": "0.4",
   "items": [
     {
-      "page": "customPage",
-      "menuId": "ActivityLink",
-      "title": { "es": "Monitor Fatiga", "en": "Fatigue Monitor" },
-      "menuName": { "es": "Monitor Fatiga y Distracción", "en": "Fatigue & Distraction Monitor" },
-      "icon": "https://raw.githubusercontent.com/Geotab/sdk/master/src/software/guides/img/icon.svg",
-      "path": "https://jcamargonavisaf.github.io/addin-fatiga/index.html"
+      "url": "https://jcamargonavisaf.github.io/addin-fatiga/index.html",
+      "path": "ActivityLink",
+      "menuName": {
+        "es": "Monitor Fatiga v0.4",
+        "en": "Fatigue Monitor v0.4"
+      }
     }
-  ],
-  "isSigned": false
+  ]
 }
