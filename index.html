@@ -52,16 +52,16 @@ var ADDIN_CONFIG = {
 
     <div id="alertsContainer"></div>
 
-    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:12px;">
-      <div style="background:linear-gradient(135deg,#018A80,#01b09f); border-radius:8px; padding:14px 16px; text-align:center; color:white; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+    <div style="display:flex; gap:10px; margin-bottom:12px;">
+      <div style="flex:1; background:linear-gradient(135deg,#018A80,#01b09f); border-radius:8px; padding:14px 16px; text-align:center; color:white; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
         <div style="font-size:30px; font-weight:700;" id="statTotal">—</div>
         <div style="font-size:11px; opacity:0.85; margin-top:2px;">Eventos totales (última hora)</div>
       </div>
-      <div style="background:linear-gradient(135deg,#2980b9,#3498db); border-radius:8px; padding:14px 16px; text-align:center; color:white; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+      <div style="flex:1; background:linear-gradient(135deg,#2980b9,#3498db); border-radius:8px; padding:14px 16px; text-align:center; color:white; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
         <div style="font-size:30px; font-weight:700;" id="statVehicles">—</div>
         <div style="font-size:11px; opacity:0.85; margin-top:2px;">Vehículos con eventos</div>
       </div>
-      <div style="background:linear-gradient(135deg,#c0392b,#e74c3c); border-radius:8px; padding:14px 16px; text-align:center; color:white; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+      <div style="flex:1; background:linear-gradient(135deg,#c0392b,#e74c3c); border-radius:8px; padding:14px 16px; text-align:center; color:white; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
         <div style="font-size:30px; font-weight:700;" id="statAlerts">—</div>
         <div style="font-size:11px; opacity:0.85; margin-top:2px;">Vehículos con alerta (≥ 10)</div>
       </div>
@@ -98,6 +98,7 @@ var ADDIN_CONFIG = {
   var tableData    = [];
   var alertsSent   = {};
   var ruleCache    = {};
+  var deviceCache  = {};
   var groupId      = null;
   var _debugData   = {};
 
@@ -124,7 +125,7 @@ var ADDIN_CONFIG = {
     t.select();
     document.execCommand('copy');
     document.body.removeChild(t);
-    alert('¡Datos de depuración guardados en el portapapeles! Si hay fallas, pégalos en el chat.');
+    alert('¡Datos guardados!');
   };
 
   if (!window.geotab)       { window.geotab = {}; }
@@ -135,55 +136,72 @@ var ADDIN_CONFIG = {
     return {
       initialize: function(freshApi, freshState, callback) {
         geotabApi = freshApi;
-        debugLog('Add-in inicializado externamente.');
-        if (window.emailjs) { 
-          emailjs.init(ADDIN_CONFIG.emailjs.publicKey); 
-          debugLog('Relay EmailJS preparado.');
-        }
+        debugLog('Add-in inicializado.');
+        if (window.emailjs) { emailjs.init(ADDIN_CONFIG.emailjs.publicKey); }
         callback();
       },
       focus: function(freshApi, freshState) {
         geotabApi = freshApi;
         document.getElementById('lblGroup').textContent = ADDIN_CONFIG.groupName;
-        resolveGroupId(function() { runCheck(); startAutoRefresh(); });
+        resolveMetadata(function() { runCheck(); startAutoRefresh(); });
       },
       blur: function() { stopAutoRefresh(); }
     };
   };
 
-  function resolveGroupId(callback) {
-    if (groupId) { callback(); return; }
-    geotabApi.call('Get', { typeName: 'Group', search: {} },
-      function(groups) {
-        var match = (groups || []).find(function(g) {
-          return g.name && g.name.toLowerCase() === ADDIN_CONFIG.groupName.toLowerCase();
-        });
-        if (match) { 
-          groupId = match.id; 
-          debugLog('Grupo resuelto: ' + groupId);
-          callback(); 
-        } else { 
-          setStatus('error', 'Grupo "' + ADDIN_CONFIG.groupName + '" no encontrado.'); 
-        }
-      },
-      function(err) {
-        var msg = err.message || err;
-        setStatus('error', 'Error al obtener grupos: ' + msg);
-        _debugData.groupError = String(msg);
+  // Carga inicial unificada de catálogos mediante multiCall
+  function resolveMetadata(onSuccess) {
+    if (groupId && Object.keys(ruleCache).length > 0 && Object.keys(deviceCache).length > 0) {
+      onSuccess();
+      return;
+    }
+
+    setStatus('loading', 'Cargando catálogos iniciales...');
+    
+    geotabApi.multiCall([
+      ['Get', { typeName: 'Group', search: {} }],
+      ['Get', { typeName: 'ExceptionRule', search: {} }],
+      ['Get', { typeName: 'Device', search: {} }]
+    ], function(results) {
+      // 1. Resolver Grupo objetivo
+      var groups = results[0];
+      var match = (groups || []).find(function(g) {
+        return g.name && g.name.toLowerCase() === ADDIN_CONFIG.groupName.toLowerCase();
+      });
+      if (match) {
+        groupId = match.id;
+        debugLog('Grupo objetivo resuelto: ' + groupId);
+      } else {
+        setStatus('error', 'Grupo no encontrado.');
+        return;
       }
-    );
+
+      // 2. Cachear Nombres de Reglas de Excepción
+      var rules = results[1] || [];
+      rules.forEach(function(r) { ruleCache[r.id] = r.name || ''; });
+      debugLog('Reglas mapeadas en caché: ' + rules.length);
+
+      // 3. Cachear Nombres de Vehículos
+      var devices = results[2] || [];
+      devices.forEach(function(d) { deviceCache[d.id] = d.name || d.id; });
+      debugLog('Vehículos mapeados en caché: ' + devices.length);
+
+      onSuccess();
+    }, function(err) {
+      setStatus('error', 'Error en multiCall: ' + (err.message || err));
+    });
   }
 
   function startAutoRefresh() {
     stopAutoRefresh();
-    refreshTimer = setInterval(function() { resolveGroupId(runCheck); }, ADDIN_CONFIG.refreshMinutes * 60000);
+    refreshTimer = setInterval(runCheck, ADDIN_CONFIG.refreshMinutes * 60000);
   }
   function stopAutoRefresh() {
     if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
   }
 
   window.runCheck = function() {
-    if (!geotabApi) { return; }
+    if (!geotabApi || !groupId) { return; }
     setStatus('loading', 'Consultando eventos...');
     document.getElementById('btnCheck').disabled = true;
 
@@ -199,7 +217,6 @@ var ADDIN_CONFIG = {
       }
     },
     function(events) {
-      debugLog('Eventos recibidos del servidor: ' + events.length);
       debugSample('rawExceptionEvents', events);
 
       if (!events || events.length === 0) {
@@ -209,34 +226,16 @@ var ADDIN_CONFIG = {
         updateLastCheck(now); return;
       }
 
-      var uncached = [];
-      events.forEach(function(e) {
-        if (e.rule && e.rule.id && !ruleCache[e.rule.id] && uncached.indexOf(e.rule.id) === -1)
-          uncached.push(e.rule.id);
-      });
-
-      if (uncached.length === 0) { processEvents(events, now); return; }
-
-      geotabApi.call('Get', { typeName: 'ExceptionRule', search: {} },
-        function(rules) {
-          (rules || []).forEach(function(r) { ruleCache[r.id] = r.name || ''; });
-          processEvents(events, now);
-        },
-        function(err) { 
-          debugLog('Aviso: Cargando sin nombres de reglas.');
-          processEvents(events, now); 
-        }
-      );
+      processEvents(events, now);
     },
     function(err) {
-      var msg = err.message || err;
-      setStatus('error', 'Error Geotab: ' + msg);
-      _debugData.lastApiError = String(msg);
+      setStatus('error', 'Error Geotab: ' + (err.message || err));
       document.getElementById('btnCheck').disabled = false;
     });
   };
 
   function processEvents(events, checkTime) {
+    // Filtrar los eventos usando el mapeo de nombres resuelto en ruleCache
     var filtered = events.filter(function(e) {
       var rn = (ruleCache[e.rule && e.rule.id] || '').toLowerCase();
       return ADDIN_CONFIG.eventKeywords.some(function(kw) { return rn.indexOf(kw.toLowerCase()) !== -1; });
@@ -247,12 +246,13 @@ var ADDIN_CONFIG = {
       var devId = e.device && e.device.id;
       if (!devId) return;
       if (!byDevice[devId]) byDevice[devId] = {
-        deviceId: devId, deviceName: '', total: 0,
+        deviceId: devId, deviceName: deviceCache[devId] || devId, total: 0,
         counts: { distraccion: 0, celular: 0, bostezo: 0, otros: 0 }
       };
+      
       byDevice[devId].total++;
       var rn = (ruleCache[e.rule && e.rule.id] || '').toLowerCase();
-      if (['distraíd','distraida','distracted','distraccion','distracción'].some(function(k){return rn.indexOf(k)!==-1;}))
+      if (['distraíd','distraida','distracted','distraccion','distración'].some(function(k){return rn.indexOf(k)!==-1;}))
         byDevice[devId].counts.distraccion++;
       else if (['celular','telefono','teléfono','phone','cellphone','movil','móvil'].some(function(k){return rn.indexOf(k)!==-1;}))
         byDevice[devId].counts.celular++;
@@ -264,56 +264,39 @@ var ADDIN_CONFIG = {
 
     var deviceIds = Object.keys(byDevice);
     if (deviceIds.length === 0) {
-      setStatus('ok', 'Sin eventos coincidentes en la última hora');
+      setStatus('ok', 'Sin eventos de fatiga/distracción detectados');
       updateStats(events.length, 0, 0); renderTable([]); clearAlerts();
       document.getElementById('btnCheck').disabled = false; updateLastCheck(checkTime); return;
     }
 
-    geotabApi.call('Get', { typeName: 'Device', search: { groups: [{ id: groupId }] } },
-      function(devices) {
-        var nameMap = {};
-        (devices || []).forEach(function(d) { nameMap[d.id] = d.name || d.id; });
-        deviceIds.forEach(function(id) { byDevice[id].deviceName = nameMap[id] || id; });
+    tableData = deviceIds.map(function(id) { return byDevice[id]; });
+    tableData.sort(function(a, b) { return b.total - a.total; });
 
-        tableData = deviceIds.map(function(id) { return byDevice[id]; });
-        tableData.sort(function(a, b) { return b.total - a.total; });
+    var alertVehicles = tableData.filter(function(v) { return v.total >= ADDIN_CONFIG.alertThreshold; });
+    updateStats(filtered.length, tableData.length, alertVehicles.length);
+    renderTable(tableData);
+    renderAlerts(alertVehicles, checkTime);
 
-        var alertVehicles = tableData.filter(function(v) { return v.total >= ADDIN_CONFIG.alertThreshold; });
-        updateStats(filtered.length, tableData.length, alertVehicles.length);
-        renderTable(tableData);
-        renderAlerts(alertVehicles, checkTime);
-
-        alertVehicles.forEach(function(v) {
-          var last = alertsSent[v.deviceId];
-          if (!last || (Date.now() - last) > 3600000) {
-            sendAlertEmail(v, checkTime);
-            alertsSent[v.deviceId] = Date.now();
-          }
-        });
-
-        var msg = alertVehicles.length > 0
-          ? ('⚠ ' + alertVehicles.length + ' vehículo(s) superan el umbral crítico')
-          : 'OK — ningún vehículo supera el umbral';
-        setStatus(alertVehicles.length > 0 ? 'warn' : 'ok', msg);
-        document.getElementById('btnCheck').disabled = false;
-        updateLastCheck(checkTime);
-      },
-      function() {
-        deviceIds.forEach(function(id) { byDevice[id].deviceName = id; });
-        tableData = deviceIds.map(function(id) { return byDevice[id]; });
-        tableData.sort(function(a, b) { return b.total - a.total; });
-        renderTable(tableData);
-        setStatus('ok', 'Listo (sin nombres de vehículos resolvedores)');
-        document.getElementById('btnCheck').disabled = false;
-        updateLastCheck(checkTime);
+    alertVehicles.forEach(function(v) {
+      var last = alertsSent[v.deviceId];
+      if (!last || (Date.now() - last) > 3600000) {
+        sendAlertEmail(v, checkTime);
+        alertsSent[v.deviceId] = Date.now();
       }
-    );
+    });
+
+    var msg = alertVehicles.length > 0
+      ? ('⚠ ' + alertVehicles.length + ' vehículo(s) superan el umbral')
+      : 'OK — ningún vehículo supera el umbral';
+    setStatus(alertVehicles.length > 0 ? 'warn' : 'ok', msg);
+    document.getElementById('btnCheck').disabled = false;
+    updateLastCheck(checkTime);
   }
 
   function renderTable(data) {
     var container = document.getElementById('tableContainer');
     if (data.length === 0) {
-      container.innerHTML = '<div style="text-align:center; padding:40px 20px; color:#aaa; font-size:13px;">✅ Sin eventos en la última hora</div>';
+      container.innerHTML = '<div style="text-align:center; padding:40px 20px; color:#aaa; font-size:13px;">✅ Sin incidencias críticas en el grupo</div>';
       return;
     }
 
@@ -333,7 +316,7 @@ var ADDIN_CONFIG = {
       var isWarn  = v.total >= Math.floor(ADDIN_CONFIG.alertThreshold * 0.7) && !isAlert;
       
       var rowBg = isAlert ? 'background:#fff0f0;' : (i % 2 === 0 ? 'background:#ffffff;' : 'background:#f9fffe;');
-      var numClassColor = isAlert ? 'color:#e74c3c;' : (isWarn ? 'color:#e67e22;' : 'color:#27ae60;');
+      var numColor = isAlert ? 'color:#e74c3c;' : (isWarn ? 'color:#e67e22;' : 'color:#27ae60;');
       
       var tagHtml = '';
       if (isAlert) {
@@ -344,12 +327,11 @@ var ADDIN_CONFIG = {
         tagHtml = '<span style="background:#d5f5e3; color:#1a7a3c; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700;">OK</span>';
       }
       
-      var emailBadge = alertsSent[v.deviceId] ? ' <span style="background:#d5f5e3; color:#1a7a3c; padding:2px 6px; border-radius:10px; font-size:9px; font-weight:600; margin-left:4px;">📧 Enviado</span>' : '';
+      var emailBadge = alertsSent[v.deviceId] ? ' <span style="background:#d5f5e3; color:#1a7a3c; padding:2px 6px; border-radius:10px; font-size:9px; font-weight:600; margin-left:4px;">📧 Correo enviado</span>' : '';
 
       html += '<tr style="' + rowBg + '" data-name="' + escHtml(v.deviceName.toLowerCase()) + '">';
-      // Enlace nativo a la vista de dispositivo en MyGeotab
-      html += '<td style="padding:8px 12px; font-size:12px; border-bottom:1px solid #eee;"><a href="#" onclick="event.preventDefault(); window.parent.location.hash=\'device,id:\'+\'' + v.deviceId + '\';" style="color:#2563eb; font-weight:bold; cursor:pointer; text-decoration:underline;">' + escHtml(v.deviceName) + '</a></td>';
-      html += '<td style="padding:8px 12px; font-size:12px; border-bottom:1px solid #eee; font-weight:700; font-size:15px; ' + numClassColor + '">' + v.total + '</td>';
+      html += '<td style="padding:8px 12px; font-size:12px; border-bottom:1px solid #eee;"><a href="#" onclick="event.preventDefault(); window.parent.location.hash=\'device,id:\'+\'' + v.deviceId + '\';\" style="color:#2563eb; font-weight:bold; cursor:pointer; text-decoration:underline;\">' + escHtml(v.deviceName) + '</a></td>';
+      html += '<td style="padding:8px 12px; font-size:12px; border-bottom:1px solid #eee; font-weight:700; font-size:15px; ' + numColor + '">' + v.total + '</td>';
       html += '<td style="padding:8px 12px; font-size:12px; border-bottom:1px solid #eee;">' + v.counts.distraccion + '</td>';
       html += '<td style="padding:8px 12px; font-size:12px; border-bottom:1px solid #eee;">' + v.counts.celular + '</td>';
       html += '<td style="padding:8px 12px; font-size:12px; border-bottom:1px solid #eee;">' + v.counts.bostezo + '</td>';
@@ -396,31 +378,24 @@ var ADDIN_CONFIG = {
       time_window: ADDIN_CONFIG.timeWindowHours + ' hora(s)',
       check_time: formatTime(time), group: ADDIN_CONFIG.groupName
     }).then(function() { 
-      debugLog('Notificación EmailJS enviada con éxito para ' + vehicle.deviceName);
+      debugLog('Notificación EmailJS despachada para ' + vehicle.deviceName);
       renderTable(tableData); 
     }).catch(function(err) { 
-      debugLog('Fallo en relay EmailJS: ' + JSON.stringify(err));
+      debugLog('Error Relay EmailJS: ' + JSON.stringify(err));
     });
   }
 
   function setStatus(type, msg) {
     var bar = document.getElementById('statusBarContainer');
     var dot = document.getElementById('statusDot');
+    var c = '#27ae60';
+    if (type === 'loading') c = '#018A80';
+    if (type === 'warn') c = '#e67e22';
+    if (type === 'error') c = '#e74c3c';
     
-    if (type === 'loading') {
-      bar.style.borderLeftColor = '#018A80';
-      dot.style.background = '#018A80';
-    } else if (type === 'warn') {
-      bar.style.borderLeftColor = '#e67e22';
-      dot.style.background = '#e67e22';
-    } else if (type === 'error') {
-      bar.style.borderLeftColor = '#e74c3c';
-      dot.style.background = '#e74c3c';
-    } else {
-      bar.style.borderLeftColor = '#27ae60';
-      dot.style.background = '#27ae60';
-    }
-    document.getElementById('statusMsg').innerHTML = '<span style="width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; background:' + dot.style.background + ';"></span>' + msg;
+    bar.style.borderLeftColor = c;
+    dot.style.background = c;
+    document.getElementById('statusMsg').innerHTML = '<span style="width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; background:' + c + ';"></span>' + msg;
   }
   
   function updateStats(total, vehicles, alerts) {
