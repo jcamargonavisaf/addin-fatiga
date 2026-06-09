@@ -4,14 +4,9 @@
   "items": [
     {
       "page": "customPage",
-      "title": {
-        "es": "Monitor Fatiga",
-        "en": "Fatigue Monitor"
-      },
-      "menuName": {
-        "es": "Monitor Fatiga y Distracción",
-        "en": "Fatigue & Distraction Monitor"
-      },
+      "menuId": "ActivityLink",
+      "title": { "es": "Monitor Fatiga", "en": "Fatigue Monitor" },
+      "menuName": { "es": "Monitor Fatiga y Distracción", "en": "Fatigue & Distraction Monitor" },
       "icon": "https://raw.githubusercontent.com/Geotab/sdk/master/src/software/guides/img/icon.svg",
       "path": "https://jcamargonavisaf.github.io/addin-fatiga/index.html"
     }
