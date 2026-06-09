@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monitor Fatiga y Distracción</title>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f4f6f9;
+      color: #2c3e50;
+      font-size: 14px;
+    }
+
+    .header {
+      background: #018A80;
+      color: white;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    .header h1 {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #btnCheck {
+      background: white;
+      color: #018A80;
+      border: none;
+      padding: 7px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+
+    #btnCheck:hover { opacity: 0.85; }
+    #btnCheck:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .badge-group {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+
+    .container { padding: 16px 20px; }
+
+    /* Status bar */
+    .status-bar {
+      background: white;
+      border-radius: 6px;
+      padding: 10px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      font-size: 12px;
+      color: #666;
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+    .dot-ok { background: #27ae60; }
+    .dot-warn { background: #e67e22; }
+    .dot-error { background: #e74c3c; }
+    .dot-loading {
+      background: #018A80;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* Alert banner */
+    .alert-banner {
+      background: #ffeaa7;
+      border-left: 4px solid #e67e22;
+      border-radius: 4px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      display: none;
+    }
+    .alert-banner.critical {
+      background: #ffeaea;
+      border-color: #e74c3c;
+    }
+    .alert-banner .alert-title {
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+    .alert-banner .alert-detail { font-size: 12px; color: #555; }
+
+    /* Stats cards */
+    .stats-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      flex: 1;
+      background: white;
+      border-radius: 6px;
+      padding: 14px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    .stat-card .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #018A80;
+    }
+    .stat-card.danger .stat-value { color: #e74c3c; }
+    .stat-card .stat-label {
+      font-size: 11px;
+      color: #888;
+      margin-top: 2px;
+    }
+
+    /* Table */
+    .table-section {
+      background: white;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    .table-header {
+      padding: 12px 16px;
+      font-weight: 600;
+      font-size: 13px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #444;
+    }
+
+    .filter-input {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 5px 10px;
+      font-size: 12px;
+      outline: none;
+      width: 180px;
+    }
+    .filter-input:focus { border-color: #018A80; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      background: #f8f9fa;
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+      border-bottom: 1px solid #e9ecef;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.15s;
+    }
+    tbody tr:hover { background: #f8fffe; }
+    tbody tr.row-alert { background: #fff5f5; }
+    tbody tr.row-alert:hover { background: #ffeeee; }
+
+    tbody td {
+      padding: 10px 14px;
+      font-size: 13px;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .tag-ok { background: #d5f5e3; color: #1a7a3c; }
+    .tag-alert { background: #fce4e4; color: #c0392b; }
+    .tag-warn { background: #fef3cd; color: #856404; }
+
+    .count-cell {
+      font-weight: 700;
+      font-size: 15px;
+    }
+    .count-alert { color: #e74c3c; }
+    .count-warn { color: #e67e22; }
+    .count-ok { color: #27ae60; }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #aaa;
+      font-size: 13px;
+    }
+    .empty-state .icon { font-size: 36px; margin-bottom: 8px; }
+
+    .email-sent-badge {
+      background: #d5f5e3;
+      color: #1a7a3c;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #ccc;
+      border-top-color: #018A80;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Config panel */
+    .config-toggle {
+      font-size: 11px;
+      color: #018A80;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .config-panel {
+      background: #fffde7;
+      border: 1px solid #f9c74f;
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .config-panel h3 { font-size: 13px; margin-bottom: 10px; color: #6d4c00; }
+    .config-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+    .config-field { flex: 1; min-width: 200px; }
+    .config-field label { display: block; font-size: 11px; color: #666; margin-bottom: 3px; font-weight: 600; }
+    .config-field input {
+      width: 100%; border: 1px solid #ddd; border-radius: 4px;
+      padding: 6px 10px; font-size: 12px; outline: none;
+    }
+    .config-field input:focus { border-color: #018A80; }
+    #btnSaveConfig {
+      background: #018A80; color: white; border: none;
+      padding: 7px 16px; border-radius: 4px; cursor: pointer;
+      font-size: 12px; font-weight: 600;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .stats-row { flex-wrap: wrap; }
+      .stat-card { min-width: 100px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     CONFIGURACIÓN — Editar estos valores antes de publicar
+     ============================================================ -->
+<script>
+var ADDIN_CONFIG = {
+  groupName:            'LHRMXCO',       // Nombre del grupo en Geotab
+  database:             'lhmrxco',       // Base de datos Geotab
+  alertThreshold:       10,              // Eventos para disparar alerta
+  timeWindowHours:      1,               // Ventana de tiempo en horas
+  refreshMinutes:       5,               // Auto-refresco en minutos
+  targetEmail:          'jcamargo@navisaf.com', // <-- CAMBIAR: correo destino
+
+  // EmailJS — Obtener en https://www.emailjs.com (cuenta gratuita)
+  emailjs: {
+    publicKey:   'w0qHujgXAi0v9CJkH',      // <-- CAMBIAR
+    serviceId:   'service_9jj0dzl',      // <-- CAMBIAR
+    templateId:  'template_pkr52on'      // <-- CAMBIAR
+  },
+
+  // Palabras clave para identificar los tipos de eventos
+  // (deben coincidir con los nombres de las reglas en Geotab)
+  eventKeywords: [
+    'distraíd', 'distraida', 'distracted', 'distraccion', 'distracción',
+    'celular', 'telefono', 'teléfono', 'phone', 'cellphone', 'movil', 'móvil',
+    'bostezo', 'yawn', 'somnolencia', 'drowsy', 'microsueño', 'fatiga', 'fatigue',
+    'surfsight'
+  ]
+};
+</script>
+<!-- ============================================================ -->
+
+<!-- Header -->
+<div class="header">
+  <h1>🚨 Monitor Fatiga y Distracción</h1>
+  <div class="header-right">
+    <span class="badge-group">📁 <span id="lblGroup">LHRMXCO</span></span>
+    <button id="btnCheck" onclick="runCheck()">▶ Verificar ahora</button>
+  </div>
+</div>
+
+<!-- Container -->
+<div class="container">
+
+  <!-- Config panel toggle -->
+  <div style="text-align:right; margin-bottom:10px;">
+    <span class="config-toggle" onclick="toggleConfig()">⚙ Configurar correo y EmailJS</span>
+  </div>
+
+  <!-- Config panel -->
+  <div class="config-panel" id="configPanel">
+    <h3>⚙ Configuración (se guarda en esta sesión)</h3>
+    <div class="config-row">
+      <div class="config-field">
+        <label>Correo destinatario</label>
+        <input type="email" id="cfgEmail" placeholder="correo@destino.com" />
+      </div>
+      <div class="config-field">
+        <label>EmailJS — Public Key</label>
+        <input type="text" id="cfgPublicKey" placeholder="YOUR_PUBLIC_KEY" />
+      </div>
+    </div>
+    <div class="config-row">
+      <div class="config-field">
+        <label>EmailJS — Service ID</label>
+        <input type="text" id="cfgServiceId" placeholder="service_xxxxxxx" />
+      </div>
+      <div class="config-field">
+        <label>EmailJS — Template ID</label>
+        <input type="text" id="cfgTemplateId" placeholder="template_xxxxxxx" />
+      </div>
+    </div>
+    <button id="btnSaveConfig" onclick="saveConfig()">💾 Guardar configuración</button>
+    <span id="cfgSaveMsg" style="font-size:12px;color:#1a7a3c;margin-left:10px;"></span>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div id="statusMsg">
+      <span class="status-dot dot-ok"></span>Listo — presiona "Verificar ahora" o espera el refresco automático
+    </div>
+    <div id="lastCheck" style="color:#aaa;">—</div>
+  </div>
+
+  <!-- Alert banners (se generan dinámicamente) -->
+  <div id="alertsContainer"></div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card" id="cardTotal">
+      <div class="stat-value" id="statTotal">—</div>
+      <div class="stat-label">Eventos totales (última hora)</div>
+    </div>
+    <div class="stat-card" id="cardVehicles">
+      <div class="stat-value" id="statVehicles">—</div>
+      <div class="stat-label">Vehículos con eventos</div>
+    </div>
+    <div class="stat-card danger" id="cardAlerts">
+      <div class="stat-value" id="statAlerts">—</div>
+      <div class="stat-label">Vehículos con alerta (≥ 10 eventos)</div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-section">
+    <div class="table-header">
+      <span>Detalle por vehículo</span>
+      <input type="text" class="filter-input" id="tableFilter"
+             placeholder="Buscar vehículo..." oninput="filterTable()" />
+    </div>
+    <div id="tableContainer">
+      <div class="empty-state">
+        <div class="icon">📡</div>
+        Presiona "Verificar ahora" para consultar los eventos
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ============================================================
+     ADD-IN LOGIC
+     ============================================================ -->
+<script>
+(function() {
+  'use strict';
+
+  // ── Estado ──────────────────────────────────────────────────
+  var geotabApi = null;
+  var refreshTimer = null;
+  var tableData = [];
+  var alertsSent = {};   // { deviceId: timestamp }
+  var ruleCache = {};    // { ruleId: ruleName }
+
+  // ── Inicialización del add-in ────────────────────────────────
+  geotab.addin.monitorFatigaDistraccion = function(api, state) {
+    geotabApi = api;
+
+    return {
+      initialize: function(freshApi, freshState, callback) {
+        geotabApi = freshApi;
+        loadConfigFromStorage();
+        initEmailJS();
+        callback();
+      },
+
+      focus: function(freshApi, freshState) {
+        geotabApi = freshApi;
+        document.getElementById('lblGroup').textContent = ADDIN_CONFIG.groupName;
+        runCheck();
+        startAutoRefresh();
+      },
+
+      blur: function() {
+        stopAutoRefresh();
+      }
+    };
+  };
+
+  // ── Auto-refresco ────────────────────────────────────────────
+  function startAutoRefresh() {
+    stopAutoRefresh();
+    refreshTimer = setInterval(runCheck, ADDIN_CONFIG.refreshMinutes * 60 * 1000);
+  }
+
+  function stopAutoRefresh() {
+    if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+  }
+
+  // ── Verificación principal ───────────────────────────────────
+  window.runCheck = function() {
+    if (!geotabApi) { return; }
+
+    setStatus('loading', 'Consultando eventos...');
+    document.getElementById('btnCheck').disabled = true;
+
+    var now = new Date();
+    var fromDate = new Date(now.getTime() - ADDIN_CONFIG.timeWindowHours * 60 * 60 * 1000);
+
+    // 1. Obtener ExceptionEvents del grupo en la última hora
+    geotabApi.call('Get', {
+      typeName: 'ExceptionEvent',
+      search: {
+        fromDate: fromDate.toISOString(),
+        toDate: now.toISOString(),
+        deviceSearch: {
+          groups: [{ name: ADDIN_CONFIG.groupName }]
+        }
+      }
+    }, function(events) {
+
+      if (!events || events.length === 0) {
+        setStatus('ok', 'Sin eventos en la última hora');
+        updateStats(0, 0, 0);
+        renderTable([]);
+        clearAlerts();
+        document.getElementById('btnCheck').disabled = false;
+        updateLastCheck(now);
+        return;
+      }
+
+      // 2. Recopilar IDs de reglas únicas
+      var ruleIds = [];
+      events.forEach(function(e) {
+        if (e.rule && e.rule.id && ruleIds.indexOf(e.rule.id) === -1) {
+          ruleIds.push(e.rule.id);
+        }
+      });
+
+      // 3. Obtener nombres de reglas (usando caché)
+      var uncached = ruleIds.filter(function(id) { return !ruleCache[id]; });
+
+      if (uncached.length === 0) {
+        processEvents(events, now);
+        return;
+      }
+
+      geotabApi.call('Get', {
+        typeName: 'ExceptionRule',
+        search: {}
+      }, function(rules) {
+        (rules || []).forEach(function(r) { ruleCache[r.id] = r.name || ''; });
+        processEvents(events, now);
+      }, function() {
+        // Si falla, procesar igual con los nombres que ya tenemos
+        processEvents(events, now);
+      });
+
+    }, function(err) {
+      setStatus('error', 'Error al consultar Geotab: ' + (err.message || err));
+      document.getElementById('btnCheck').disabled = false;
+    });
+  };
+
+  // ── Procesamiento de eventos ─────────────────────────────────
+  function processEvents(events, checkTime) {
+    // Filtrar solo eventos de los tipos configurados
+    var filtered = events.filter(function(e) {
+      var ruleName = (ruleCache[e.rule && e.rule.id] || '').toLowerCase();
+      return ADDIN_CONFIG.eventKeywords.some(function(kw) {
+        return ruleName.indexOf(kw.toLowerCase()) !== -1;
+      });
+    });
+
+    // Agrupar por vehículo
+    var byDevice = {};
+    filtered.forEach(function(e) {
+      var devId = e.device && e.device.id;
+      if (!devId) return;
+      if (!byDevice[devId]) {
+        byDevice[devId] = {
+          deviceId: devId,
+          deviceName: '',
+          counts: { distraccion: 0, celular: 0, bostezo: 0, otros: 0 },
+          total: 0,
+          events: []
+        };
+      }
+      byDevice[devId].total++;
+      byDevice[devId].events.push(e);
+
+      // Categorizar
+      var rn = (ruleCache[e.rule && e.rule.id] || '').toLowerCase();
+      if (['distraíd','distraida','distracted','distraccion','distracción'].some(function(k){return rn.indexOf(k)!==-1;})) {
+        byDevice[devId].counts.distraccion++;
+      } else if (['celular','telefono','teléfono','phone','cellphone','movil','móvil'].some(function(k){return rn.indexOf(k)!==-1;})) {
+        byDevice[devId].counts.celular++;
+      } else if (['bostezo','yawn','somnolencia','drowsy','microsueño','fatiga','fatigue'].some(function(k){return rn.indexOf(k)!==-1;})) {
+        byDevice[devId].counts.bostezo++;
+      } else {
+        byDevice[devId].counts.otros++;
+      }
+    });
+
+    // Obtener nombres de vehículos
+    var deviceIds = Object.keys(byDevice);
+
+    if (deviceIds.length === 0) {
+      setStatus('ok', 'Sin eventos coincidentes en la última hora');
+      updateStats(events.length, 0, 0);
+      renderTable([]);
+      clearAlerts();
+      document.getElementById('btnCheck').disabled = false;
+      updateLastCheck(checkTime);
+      return;
+    }
+
+    geotabApi.call('Get', {
+      typeName: 'Device',
+      search: {
+        groups: [{ name: ADDIN_CONFIG.groupName }]
+      }
+    }, function(devices) {
+      var nameMap = {};
+      (devices || []).forEach(function(d) { nameMap[d.id] = d.name || d.id; });
+
+      deviceIds.forEach(function(id) {
+        byDevice[id].deviceName = nameMap[id] || id;
+      });
+
+      tableData = deviceIds.map(function(id) { return byDevice[id]; });
+      tableData.sort(function(a, b) { return b.total - a.total; });
+
+      // Identificar alertas
+      var alertVehicles = tableData.filter(function(v) {
+        return v.total >= ADDIN_CONFIG.alertThreshold;
+      });
+
+      // Stats
+      var totalFiltered = filtered.length;
+      updateStats(totalFiltered, tableData.length, alertVehicles.length);
+      renderTable(tableData);
+      renderAlerts(alertVehicles, checkTime);
+
+      // Enviar correos para vehículos nuevos que superen el umbral
+      alertVehicles.forEach(function(v) {
+        var lastSent = alertsSent[v.deviceId];
+        var now = Date.now();
+        // Enviar solo si nunca se envió o pasó más de 1 hora desde el último envío
+        if (!lastSent || (now - lastSent) > 60 * 60 * 1000) {
+          sendAlertEmail(v, checkTime);
+          alertsSent[v.deviceId] = now;
+        }
+      });
+
+      var msg = alertVehicles.length > 0
+        ? ('⚠ ' + alertVehicles.length + ' vehículo(s) superan el umbral de ' + ADDIN_CONFIG.alertThreshold + ' eventos')
+        : 'OK — ningún vehículo supera el umbral';
+      setStatus(alertVehicles.length > 0 ? 'warn' : 'ok', msg);
+      document.getElementById('btnCheck').disabled = false;
+      updateLastCheck(checkTime);
+
+    }, function() {
+      // Si falla obtener nombres, igual renderizar con IDs
+      deviceIds.forEach(function(id) { byDevice[id].deviceName = id; });
+      tableData = deviceIds.map(function(id) { return byDevice[id]; });
+      tableData.sort(function(a, b) { return b.total - a.total; });
+      renderTable(tableData);
+      setStatus('ok', 'Listo (sin nombres de vehículos)');
+      document.getElementById('btnCheck').disabled = false;
+      updateLastCheck(checkTime);
+    });
+  }
+
+  // ── Render tabla ─────────────────────────────────────────────
+  function renderTable(data) {
+    var container = document.getElementById('tableContainer');
+
+    if (data.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="icon">✅</div>Sin eventos de fatiga o distracción en la última hora</div>';
+      return;
+    }
+
+    var rows = data.map(function(v) {
+      var isAlert = v.total >= ADDIN_CONFIG.alertThreshold;
+      var isWarn  = v.total >= Math.floor(ADDIN_CONFIG.alertThreshold * 0.7) && !isAlert;
+      var rowClass = isAlert ? 'row-alert' : '';
+      var countClass = isAlert ? 'count-alert' : (isWarn ? 'count-warn' : 'count-ok');
+      var tag = isAlert
+        ? '<span class="tag tag-alert">🚨 ALERTA</span>'
+        : (isWarn ? '<span class="tag tag-warn">⚠ Atención</span>' : '<span class="tag tag-ok">OK</span>');
+      var emailBadge = alertsSent[v.deviceId]
+        ? '<span class="email-sent-badge">📧 Correo enviado</span>'
+        : '';
+
+      return '<tr class="' + rowClass + '" data-name="' + escHtml(v.deviceName.toLowerCase()) + '">'
+        + '<td><strong>' + escHtml(v.deviceName) + '</strong></td>'
+        + '<td class="count-cell ' + countClass + '">' + v.total + '</td>'
+        + '<td>' + v.counts.distraccion + '</td>'
+        + '<td>' + v.counts.celular + '</td>'
+        + '<td>' + v.counts.bostezo + '</td>'
+        + '<td>' + tag + ' ' + emailBadge + '</td>'
+        + '</tr>';
+    }).join('');
+
+    container.innerHTML = '<table>'
+      + '<thead><tr>'
+      + '<th>Vehículo</th>'
+      + '<th>Total eventos</th>'
+      + '<th>Conducción distraída</th>'
+      + '<th>Uso de celular</th>'
+      + '<th>Bostezo / Somnolencia</th>'
+      + '<th>Estado</th>'
+      + '</tr></thead>'
+      + '<tbody>' + rows + '</tbody>'
+      + '</table>';
+  }
+
+  // ── Filtro de tabla ──────────────────────────────────────────
+  window.filterTable = function() {
+    var q = document.getElementById('tableFilter').value.toLowerCase();
+    var rows = document.querySelectorAll('#tableContainer tbody tr');
+    rows.forEach(function(r) {
+      r.style.display = (!q || r.dataset.name.indexOf(q) !== -1) ? '' : 'none';
+    });
+  };
+
+  // ── Alertas visuales ─────────────────────────────────────────
+  function renderAlerts(vehicles, time) {
+    var container = document.getElementById('alertsContainer');
+    container.innerHTML = '';
+    vehicles.forEach(function(v) {
+      var div = document.createElement('div');
+      div.className = 'alert-banner critical';
+      div.style.display = 'block';
+      div.innerHTML = '<div class="alert-title">🚨 ALERTA — ' + escHtml(v.deviceName) + '</div>'
+        + '<div class="alert-detail">'
+        + v.total + ' eventos en la última hora '
+        + '(Distraído: ' + v.counts.distraccion
+        + ' | Celular: ' + v.counts.celular
+        + ' | Bostezo: ' + v.counts.bostezo + ')'
+        + ' — ' + formatTime(time)
+        + '</div>';
+      container.appendChild(div);
+    });
+  }
+
+  function clearAlerts() {
+    document.getElementById('alertsContainer').innerHTML = '';
+  }
+
+  // ── Envío de correo via EmailJS ──────────────────────────────
+  function sendAlertEmail(vehicle, time) {
+    var cfg = ADDIN_CONFIG.emailjs;
+    if (!cfg.publicKey || cfg.publicKey === 'YOUR_PUBLIC_KEY') {
+      console.warn('EmailJS no configurado. Configura las credenciales en el panel de configuración.');
+      return;
+    }
+
+    var params = {
+      to_email:     ADDIN_CONFIG.targetEmail,
+      vehicle_name: vehicle.deviceName,
+      total_events: vehicle.total,
+      distraido:    vehicle.counts.distraccion,
+      celular:      vehicle.counts.celular,
+      bostezo:      vehicle.counts.bostezo,
+      time_window:  ADDIN_CONFIG.timeWindowHours + ' hora(s)',
+      check_time:   formatTime(time),
+      group:        ADDIN_CONFIG.groupName
+    };
+
+    emailjs.send(cfg.serviceId, cfg.templateId, params)
+      .then(function() {
+        console.log('Correo de alerta enviado para ' + vehicle.deviceName);
+        // Actualizar badge en tabla
+        renderTable(tableData);
+      })
+      .catch(function(err) {
+        console.error('Error enviando correo:', err);
+      });
+  }
+
+  // ── UI helpers ───────────────────────────────────────────────
+  function setStatus(type, msg) {
+    var el = document.getElementById('statusMsg');
+    var dotClass = { ok: 'dot-ok', warn: 'dot-warn', error: 'dot-error', loading: 'dot-loading' }[type] || 'dot-ok';
+    var prefix = type === 'loading' ? '<span class="spinner"></span>' : '<span class="status-dot ' + dotClass + '"></span>';
+    el.innerHTML = prefix + msg;
+  }
+
+  function updateStats(total, vehicles, alerts) {
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statVehicles').textContent = vehicles;
+    document.getElementById('statAlerts').textContent = alerts;
+    document.getElementById('cardAlerts').className = 'stat-card' + (alerts > 0 ? ' danger' : '');
+  }
+
+  function updateLastCheck(time) {
+    document.getElementById('lastCheck').textContent = 'Última revisión: ' + formatTime(time);
+  }
+
+  function formatTime(d) {
+    return d.toLocaleDateString('es-MX') + ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Config panel ─────────────────────────────────────────────
+  window.toggleConfig = function() {
+    var panel = document.getElementById('configPanel');
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    if (panel.style.display === 'block') {
+      document.getElementById('cfgEmail').value      = ADDIN_CONFIG.targetEmail;
+      document.getElementById('cfgPublicKey').value  = ADDIN_CONFIG.emailjs.publicKey;
+      document.getElementById('cfgServiceId').value  = ADDIN_CONFIG.emailjs.serviceId;
+      document.getElementById('cfgTemplateId').value = ADDIN_CONFIG.emailjs.templateId;
+    }
+  };
+
+  window.saveConfig = function() {
+    ADDIN_CONFIG.targetEmail           = document.getElementById('cfgEmail').value.trim();
+    ADDIN_CONFIG.emailjs.publicKey     = document.getElementById('cfgPublicKey').value.trim();
+    ADDIN_CONFIG.emailjs.serviceId     = document.getElementById('cfgServiceId').value.trim();
+    ADDIN_CONFIG.emailjs.templateId    = document.getElementById('cfgTemplateId').value.trim();
+    saveConfigToStorage();
+    initEmailJS();
+    document.getElementById('cfgSaveMsg').textContent = '✔ Guardado';
+    setTimeout(function() { document.getElementById('cfgSaveMsg').textContent = ''; }, 2500);
+  };
+
+  function initEmailJS() {
+    if (ADDIN_CONFIG.emailjs.publicKey && ADDIN_CONFIG.emailjs.publicKey !== 'YOUR_PUBLIC_KEY') {
+      emailjs.init(ADDIN_CONFIG.emailjs.publicKey);
+    }
+  }
+
+  function saveConfigToStorage() {
+    try {
+      localStorage.setItem('mfd_config', JSON.stringify({
+        targetEmail: ADDIN_CONFIG.targetEmail,
+        emailjs: ADDIN_CONFIG.emailjs
+      }));
+    } catch(e) {}
+  }
+
+  function loadConfigFromStorage() {
+    try {
+      var stored = localStorage.getItem('mfd_config');
+      if (stored) {
+        var cfg = JSON.parse(stored);
+        if (cfg.targetEmail) ADDIN_CONFIG.targetEmail = cfg.targetEmail;
+        if (cfg.emailjs) ADDIN_CONFIG.emailjs = cfg.emailjs;
+      }
+    } catch(e) {}
+  }
+
+})();
+</script>
+
+</body>
+</html>
