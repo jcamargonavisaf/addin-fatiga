@@ -10,11 +10,12 @@
 
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
-      background: #f4f6f9;
+      background: #f0f4f8;
       color: #2c3e50;
       font-size: 14px;
     }
 
+    /* ── Header ── */
     .header {
       background: #018A80;
       color: white;
@@ -24,35 +25,33 @@
       justify-content: space-between;
       box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
-
     .header h1 { font-size: 16px; font-weight: 600; letter-spacing: 0.3px; }
-
     .header-right { display: flex; align-items: center; gap: 10px; }
-
+    .badge-group {
+      background: rgba(255,255,255,0.25);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
     #btnCheck {
       background: white;
       color: #018A80;
       border: none;
-      padding: 7px 16px;
+      padding: 7px 18px;
       border-radius: 4px;
       cursor: pointer;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
       transition: opacity 0.2s;
     }
     #btnCheck:hover { opacity: 0.85; }
     #btnCheck:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .badge-group {
-      background: rgba(255,255,255,0.2);
-      color: white;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 12px;
-    }
-
+    /* ── Container ── */
     .container { padding: 16px 20px; }
 
+    /* ── Status bar ── */
     .status-bar {
       background: white;
       border-radius: 6px;
@@ -61,10 +60,14 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
       font-size: 12px;
-      color: #666;
+      color: #555;
+      border-left: 4px solid #27ae60;
     }
+    .status-bar.status-warn { border-left-color: #e67e22; }
+    .status-bar.status-error { border-left-color: #e74c3c; }
+    .status-bar.status-loading { border-left-color: #018A80; }
 
     .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
     .dot-ok { background: #27ae60; }
@@ -73,50 +76,62 @@
     .dot-loading { background: #018A80; animation: pulse 1s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-    .alert-banner {
-      background: #ffeaea;
-      border-left: 4px solid #e74c3c;
-      border-radius: 4px;
-      padding: 12px 16px;
-      margin-bottom: 12px;
+    .spinner {
+      display: inline-block; width: 13px; height: 13px;
+      border: 2px solid rgba(255,255,255,0.4); border-top-color: #018A80;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      vertical-align: middle; margin-right: 6px;
     }
-    .alert-banner .alert-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
-    .alert-banner .alert-detail { font-size: 12px; color: #555; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ── Alert banners ── */
+    .alert-banner {
+      background: #fff0f0;
+      border-left: 4px solid #e74c3c;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+    .alert-banner .alert-title { font-weight: 700; font-size: 13px; margin-bottom: 3px; color: #c0392b; }
+    .alert-banner .alert-detail { font-size: 12px; color: #666; }
+
+    /* ── Stat cards ── */
     .stats-row { display: flex; gap: 12px; margin-bottom: 16px; }
-
     .stat-card {
       flex: 1;
-      background: white;
-      border-radius: 6px;
-      padding: 14px 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      border-radius: 8px;
+      padding: 16px 18px;
       text-align: center;
+      color: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
     }
-    .stat-card .stat-value { font-size: 28px; font-weight: 700; color: #018A80; }
-    .stat-card.danger .stat-value { color: #e74c3c; }
-    .stat-card .stat-label { font-size: 11px; color: #888; margin-top: 2px; }
+    .stat-card.card-teal  { background: linear-gradient(135deg, #018A80, #01b09f); }
+    .stat-card.card-blue  { background: linear-gradient(135deg, #2471a3, #3498db); }
+    .stat-card.card-red   { background: linear-gradient(135deg, #a93226, #e74c3c); }
+    .stat-card .stat-value { font-size: 32px; font-weight: 700; line-height: 1; }
+    .stat-card .stat-label { font-size: 11px; opacity: 0.88; margin-top: 5px; }
 
+    /* ── Table section ── */
     .table-section {
       background: white;
-      border-radius: 6px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.09);
       overflow: hidden;
     }
-
     .table-header {
-      padding: 12px 16px;
-      font-weight: 600;
+      padding: 11px 16px;
+      font-weight: 700;
       font-size: 13px;
-      border-bottom: 1px solid #eee;
+      border-bottom: 2px solid #018A80;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      color: #444;
+      color: #018A80;
+      background: #f8fffe;
     }
-
     .filter-input {
-      border: 1px solid #ddd;
+      border: 1px solid #cce8e6;
       border-radius: 4px;
       padding: 5px 10px;
       font-size: 12px;
@@ -126,63 +141,53 @@
     .filter-input:focus { border-color: #018A80; }
 
     table { width: 100%; border-collapse: collapse; }
-
     thead th {
-      background: #f8f9fa;
-      padding: 10px 14px;
+      background: #018A80;
+      color: white;
+      padding: 9px 14px;
       text-align: left;
       font-size: 12px;
       font-weight: 600;
-      color: #555;
-      border-bottom: 1px solid #e9ecef;
       white-space: nowrap;
     }
-
     tbody tr { border-bottom: 1px solid #f0f0f0; transition: background 0.15s; }
-    tbody tr:hover { background: #f8fffe; }
-    tbody tr.row-alert { background: #fff5f5; }
-    tbody tr.row-alert:hover { background: #ffeeee; }
+    tbody tr:nth-child(even) { background: #f9fffe; }
+    tbody tr:hover { background: #e8f8f5; }
+    tbody tr.row-alert { background: #fff0f0; }
+    tbody tr.row-alert:hover { background: #ffe4e4; }
     tbody td { padding: 10px 14px; font-size: 13px; }
 
-    .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
-    .tag-ok { background: #d5f5e3; color: #1a7a3c; }
+    .tag { display: inline-block; padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+    .tag-ok    { background: #d5f5e3; color: #1a7a3c; }
     .tag-alert { background: #fce4e4; color: #c0392b; }
-    .tag-warn { background: #fef3cd; color: #856404; }
+    .tag-warn  { background: #fef3cd; color: #856404; }
 
     .count-cell { font-weight: 700; font-size: 15px; }
     .count-alert { color: #e74c3c; }
-    .count-warn { color: #e67e22; }
-    .count-ok { color: #27ae60; }
+    .count-warn  { color: #e67e22; }
+    .count-ok    { color: #27ae60; }
 
-    .empty-state { text-align: center; padding: 40px 20px; color: #aaa; font-size: 13px; }
-    .empty-state .icon { font-size: 36px; margin-bottom: 8px; }
+    .empty-state { text-align: center; padding: 44px 20px; color: #aaa; font-size: 13px; }
+    .empty-state .icon { font-size: 40px; margin-bottom: 10px; }
 
     .email-sent-badge {
       background: #d5f5e3; color: #1a7a3c;
       padding: 2px 8px; border-radius: 10px;
-      font-size: 10px; font-weight: 600;
+      font-size: 10px; font-weight: 700; margin-left: 4px;
     }
-
-    .spinner {
-      display: inline-block; width: 14px; height: 14px;
-      border: 2px solid #ccc; border-top-color: #018A80;
-      border-radius: 50%; animation: spin 0.7s linear infinite;
-      vertical-align: middle; margin-right: 6px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
 
     @media (max-width: 600px) {
       .stats-row { flex-wrap: wrap; }
-      .stat-card { min-width: 100px; }
+      .stat-card { min-width: 120px; }
     }
   </style>
 </head>
 <body>
 
 <script>
-// ============================================================
-// CONFIGURACIÓN — Editar estos valores
-// ============================================================
+/* ============================================================
+   CONFIGURACIÓN
+   ============================================================ */
 var ADDIN_CONFIG = {
   groupName:        'LHRMXCO',
   alertThreshold:   10,
@@ -195,13 +200,12 @@ var ADDIN_CONFIG = {
     templateId: 'template_pkr52on'
   },
   eventKeywords: [
-    'distraíd', 'distraida', 'distracted', 'distraccion', 'distracción',
-    'celular', 'telefono', 'teléfono', 'phone', 'cellphone', 'movil', 'móvil',
-    'bostezo', 'yawn', 'somnolencia', 'drowsy', 'microsueño', 'fatiga', 'fatigue',
+    'distraíd','distraida','distracted','distraccion','distracción',
+    'celular','telefono','teléfono','phone','cellphone','movil','móvil',
+    'bostezo','yawn','somnolencia','drowsy','microsueño','fatiga','fatigue',
     'surfsight'
   ]
 };
-// ============================================================
 </script>
 
 <!-- Header -->
@@ -215,25 +219,25 @@ var ADDIN_CONFIG = {
 
 <div class="container">
 
-  <div class="status-bar">
+  <div class="status-bar" id="statusBar">
     <div id="statusMsg">
       <span class="status-dot dot-ok"></span>Listo — presiona "Verificar ahora" o espera el refresco automático
     </div>
-    <div id="lastCheck" style="color:#aaa;">—</div>
+    <div id="lastCheck" style="color:#aaa;font-size:11px;">—</div>
   </div>
 
   <div id="alertsContainer"></div>
 
   <div class="stats-row">
-    <div class="stat-card" id="cardTotal">
+    <div class="stat-card card-teal">
       <div class="stat-value" id="statTotal">—</div>
       <div class="stat-label">Eventos totales (última hora)</div>
     </div>
-    <div class="stat-card" id="cardVehicles">
+    <div class="stat-card card-blue">
       <div class="stat-value" id="statVehicles">—</div>
       <div class="stat-label">Vehículos con eventos</div>
     </div>
-    <div class="stat-card danger" id="cardAlerts">
+    <div class="stat-card card-red" id="cardAlerts">
       <div class="stat-value" id="statAlerts">—</div>
       <div class="stat-label">Vehículos con alerta (≥ 10 eventos)</div>
     </div>
@@ -279,9 +283,7 @@ var ADDIN_CONFIG = {
         runCheck();
         startAutoRefresh();
       },
-      blur: function() {
-        stopAutoRefresh();
-      }
+      blur: function() { stopAutoRefresh(); }
     };
   };
 
@@ -289,7 +291,6 @@ var ADDIN_CONFIG = {
     stopAutoRefresh();
     refreshTimer = setInterval(runCheck, ADDIN_CONFIG.refreshMinutes * 60 * 1000);
   }
-
   function stopAutoRefresh() {
     if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
   }
@@ -319,20 +320,16 @@ var ADDIN_CONFIG = {
         updateLastCheck(now);
         return;
       }
-
       var ruleIds = [];
       events.forEach(function(e) {
         if (e.rule && e.rule.id && ruleIds.indexOf(e.rule.id) === -1) ruleIds.push(e.rule.id);
       });
-
       var uncached = ruleIds.filter(function(id) { return !ruleCache[id]; });
       if (uncached.length === 0) { processEvents(events, now); return; }
-
       geotabApi.call('Get', { typeName: 'ExceptionRule', search: {} }, function(rules) {
         (rules || []).forEach(function(r) { ruleCache[r.id] = r.name || ''; });
         processEvents(events, now);
       }, function() { processEvents(events, now); });
-
     }, function(err) {
       setStatus('error', 'Error: ' + (err.message || err));
       document.getElementById('btnCheck').disabled = false;
@@ -341,19 +338,15 @@ var ADDIN_CONFIG = {
 
   function processEvents(events, checkTime) {
     var filtered = events.filter(function(e) {
-      var ruleName = (ruleCache[e.rule && e.rule.id] || '').toLowerCase();
-      return ADDIN_CONFIG.eventKeywords.some(function(kw) {
-        return ruleName.indexOf(kw.toLowerCase()) !== -1;
-      });
+      var rn = (ruleCache[e.rule && e.rule.id] || '').toLowerCase();
+      return ADDIN_CONFIG.eventKeywords.some(function(kw) { return rn.indexOf(kw.toLowerCase()) !== -1; });
     });
 
     var byDevice = {};
     filtered.forEach(function(e) {
       var devId = e.device && e.device.id;
       if (!devId) return;
-      if (!byDevice[devId]) {
-        byDevice[devId] = { deviceId: devId, deviceName: '', counts: { distraccion: 0, celular: 0, bostezo: 0 }, total: 0 };
-      }
+      if (!byDevice[devId]) byDevice[devId] = { deviceId: devId, deviceName: '', counts: { distraccion: 0, celular: 0, bostezo: 0 }, total: 0 };
       byDevice[devId].total++;
       var rn = (ruleCache[e.rule && e.rule.id] || '').toLowerCase();
       if (['distraíd','distraida','distracted','distraccion','distracción'].some(function(k){return rn.indexOf(k)!==-1;}))
@@ -436,7 +429,7 @@ var ADDIN_CONFIG = {
         + '<td>' + v.counts.distraccion + '</td>'
         + '<td>' + v.counts.celular + '</td>'
         + '<td>' + v.counts.bostezo + '</td>'
-        + '<td>' + tag + ' ' + emailBadge + '</td>'
+        + '<td>' + tag + emailBadge + '</td>'
         + '</tr>';
     }).join('');
     container.innerHTML = '<table><thead><tr>'
@@ -485,7 +478,9 @@ var ADDIN_CONFIG = {
   }
 
   function setStatus(type, msg) {
-    var dotClass = { ok: 'dot-ok', warn: 'dot-warn', error: 'dot-error', loading: 'dot-loading' }[type] || 'dot-ok';
+    var bar = document.getElementById('statusBar');
+    bar.className = 'status-bar' + (type === 'warn' ? ' status-warn' : type === 'error' ? ' status-error' : type === 'loading' ? ' status-loading' : '');
+    var dotClass = { ok:'dot-ok', warn:'dot-warn', error:'dot-error', loading:'dot-loading' }[type] || 'dot-ok';
     var prefix = type === 'loading' ? '<span class="spinner"></span>' : '<span class="status-dot ' + dotClass + '"></span>';
     document.getElementById('statusMsg').innerHTML = prefix + msg;
   }
@@ -494,7 +489,6 @@ var ADDIN_CONFIG = {
     document.getElementById('statTotal').textContent = total;
     document.getElementById('statVehicles').textContent = vehicles;
     document.getElementById('statAlerts').textContent = alerts;
-    document.getElementById('cardAlerts').className = 'stat-card' + (alerts > 0 ? ' danger' : '');
   }
 
   function updateLastCheck(time) {
