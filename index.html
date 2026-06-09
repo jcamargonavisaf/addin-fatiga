@@ -70,4 +70,336 @@ var ADDIN_CONFIG = {
     <div style="background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.04); border:1px solid #e1e8ed;">
       <div style="padding:10px 14px; display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #018A80;">
         <span style="font-weight:700; font-size:13px; color:#018A80;">Detalle por vehículo</span>
-        <input id="tableFilter" oninput="filterTable()" style="border:1px solid #ddd; border-radius:
+        <input id="tableFilter" oninput="filterTable()" style="border:1px solid #ddd; border-radius:4px; padding:4px 10px; font-size:12px; width:160px; outline:none;" placeholder="Buscar vehículo..." />
+      </div>
+      <div id="tableContainer">
+        <div style="text-align:center; padding:40px 20px; color:#aaa; font-size:13px;">
+          <div style="font-size:36px; margin-bottom:8px;">📡</div>
+          Presiona "Verificar ahora" para consultar los eventos
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="debug-toggle" style="position:fixed; bottom:0; left:0; right:0; text-align:center; z-index:9999;">
+  <button onclick="var d=document.getElementById('debug-log');d.style.display=d.style.display==='none'?'block':'none';" style="background:#e74c3c; color:#fff; border:none; padding:4px 16px; cursor:pointer; font-size:12px; border-radius:4px 4px 0 0;">Toggle Debug Log</button>
+  <button onclick="copyDebugData()" style="background:#f39c12; color:#fff; border:none; padding:4px 16px; cursor:pointer; font-size:12px; border-radius:4px 4px 0 0; margin-left:4px;">Copy Debug Data</button>
+  <pre id="debug-log" style="display:none; background:#1e1e1e; color:#0f0; padding:10px; margin:0; max-height:180px; overflow-y:auto; text-align:left; font-size:11px; font-family:monospace;"></pre>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  var geotabApi    = null;
+  var refreshTimer = null;
+  var tableData    = [];
+  var alertsSent   = {};
+  var deviceCache  = {};
+  var groupId      = null;
+  var _debugData   = {};
+
+  function debugLog(msg) {
+    var el = document.getElementById('debug-log');
+    if (el) {
+      var time = new Date().toLocaleTimeString();
+      el.textContent += '[' + time + '] ' + msg + '\n';
+      el.scrollTop = el.scrollHeight;
+    }
+  }
+
+  function debugSample(key, arr) {
+    _debugData[key] = {
+      total: arr.length,
+      sample: arr.slice(0, 10)
+    };
+  }
+
+  window.copyDebugData = function() {
+    var t = document.createElement('textarea');
+    t.value = JSON.stringify(_debugData, null, 2);
+    document.body.appendChild(t);
+    t.select();
+    document.execCommand('copy');
+    document.body.removeChild(t);
+    alert('Datos de diagnóstico copiados.');
+  };
+
+  if (!window.geotab)       { window.geotab = {}; }
+  if (!window.geotab.addin) { window.geotab.addin = {}; }
+
+  // Nombre de firma exacto vinculado a la inicialización externa
+  window.geotab.addin.monitorFatigaDistraccion = function(api, state) {
+    geotabApi = api;
+    return {
+      initialize: function(freshApi, freshState, callback) {
+        geotabApi = freshApi;
+        debugLog('Add-In cargado de forma externa con éxito.');
+        if (window.emailjs) { 
+          emailjs.init(ADDIN_CONFIG.emailjs.publicKey); 
+        }
+        
+        // ¡CRÍTICO! Informa a MyGeotab que la carga fue exitosa para quitar el letrero gris de error
+        callback(); 
+      },
+      focus: function(freshApi, freshState) {
+        geotabApi = freshApi;
+        document.getElementById('lblGroup').textContent = ADDIN_CONFIG.groupName;
+        resolveMetadata(function() { runCheck(); startAutoRefresh(); });
+      },
+      blur: function() { 
+        stopAutoRefresh(); 
+      }
+    };
+  };
+
+  function resolveMetadata(onSuccess) {
+    if (groupId && Object.keys(deviceCache).length > 0) {
+      onSuccess();
+      return;
+    }
+    setStatus('loading', 'Sincronizando activos...');
+    
+    geotabApi.multiCall([
+      ['Get', { typeName: 'Group', search: {} }],
+      ['Get', { typeName: 'Device', search: {} }]
+    ], function(results) {
+      var groups = results[0];
+      var match = (groups || []).find(function(g) {
+        return g.name && g.name.toLowerCase() === ADDIN_CONFIG.groupName.toLowerCase();
+      });
+      
+      if (match) {
+        groupId = match.id;
+        debugLog('Grupo objetivo mapeado: ' + groupId);
+      } else {
+        setStatus('error', 'Grupo "' + ADDIN_CONFIG.groupName + '" no encontrado.');
+        return;
+      }
+
+      var devices = results[1] || [];
+      devices.forEach(function(d) { deviceCache[d.id] = d.name || d.id; });
+      debugLog('Dispositivos cargados a memoria: ' + devices.length);
+
+      onSuccess();
+    }, function(err) {
+      setStatus('error', 'Falla multiCall inicial: ' + (err.message || err));
+    });
+  }
+
+  function startAutoRefresh() {
+    stopAutoRefresh();
+    refreshTimer = setInterval(runCheck, ADDIN_CONFIG.refreshMinutes * 60000);
+  }
+  function stopAutoRefresh() {
+    if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+  }
+
+  window.runCheck = function() {
+    if (!geotabApi || !groupId) { return; }
+    setStatus('loading', 'Buscando incidencias...');
+    document.getElementById('btnCheck').disabled = true;
+
+    var now = new Date();
+    var fromDate = new Date(now.getTime() - ADDIN_CONFIG.timeWindowHours * 3600000);
+
+    var targetRuleIds = [
+      ADDIN_CONFIG.ruleIds.distraccion,
+      ADDIN_CONFIG.ruleIds.celular,
+      ADDIN_CONFIG.ruleIds.bostezo
+    ];
+
+    geotabApi.call('Get', {
+      typeName: 'ExceptionEvent',
+      search: {
+        fromDate: fromDate.toISOString(),
+        toDate:   now.toISOString(),
+        deviceSearch: { groups: [{ id: groupId }] }
+      }
+    },
+    function(events) {
+      debugLog('Eventos crudos evaluados: ' + events.length);
+      debugSample('rawExceptionEvents', events);
+
+      if (!events || events.length === 0) {
+        setStatus('ok', 'Sin alertas en la última hora');
+        updateStats(0, 0, 0); renderTable([]); clearAlerts();
+        document.getElementById('btnCheck').disabled = false;
+        updateLastCheck(now); return;
+      }
+
+      // Filtrado directo de alto desempeño por ID estricto
+      var filtered = events.filter(function(e) {
+        return e.rule && e.rule.id && targetRuleIds.indexOf(e.rule.id) !== -1;
+      });
+
+      var byDevice = {};
+      filtered.forEach(function(e) {
+        var devId = e.device && e.device.id;
+        if (!devId) return;
+        
+        if (!byDevice[devId]) byDevice[devId] = {
+          deviceId: devId, deviceName: deviceCache[devId] || devId, total: 0,
+          counts: { distraccion: 0, celular: 0, bostezo: 0 }
+        };
+        
+        byDevice[devId].total++;
+        var rid = e.rule.id;
+        
+        if (rid === ADDIN_CONFIG.ruleIds.distraccion) byDevice[devId].counts.distraccion++;
+        else if (rid === ADDIN_CONFIG.ruleIds.celular) byDevice[devId].counts.celular++;
+        else if (rid === ADDIN_CONFIG.ruleIds.bostezo) byDevice[devId].counts.bostezo++;
+      });
+
+      var deviceIds = Object.keys(byDevice);
+      if (deviceIds.length === 0) {
+        setStatus('ok', 'Cero incidencias en las 3 reglas objetivo');
+        updateStats(events.length, 0, 0); renderTable([]); clearAlerts();
+        document.getElementById('btnCheck').disabled = false; updateLastCheck(now); return;
+      }
+
+      tableData = deviceIds.map(function(id) { return byDevice[id]; });
+      tableData.sort(function(a, b) { return b.total - a.total; });
+
+      var alertVehicles = tableData.filter(function(v) { return v.total >= ADDIN_CONFIG.alertThreshold; });
+      updateStats(filtered.length, tableData.length, alertVehicles.length);
+      renderTable(tableData);
+      renderAlerts(alertVehicles, now);
+
+      alertVehicles.forEach(function(v) {
+        var last = alertsSent[v.deviceId];
+        if (!last || (Date.now() - last) > 3600000) {
+          sendAlertEmail(v, now);
+          alertsSent[v.deviceId] = Date.now();
+        }
+      });
+
+      setStatus(alertVehicles.length > 0 ? 'warn' : 'ok', alertVehicles.length > 0 ? 'Operadores críticos detectados' : 'Monitoreo estable — Flota OK');
+      document.getElementById('btnCheck').disabled = false;
+      updateLastCheck(now);
+    },
+    function(err) {
+      setStatus('error', 'Error API: ' + (err.message || err));
+      document.getElementById('btnCheck').disabled = false;
+    });
+  };
+
+  function renderTable(data) {
+    var container = document.getElementById('tableContainer');
+    if (data.length === 0) {
+      container.innerHTML = '<div style="text-align:center; padding:40px 20px; color:#aaa; font-size:13px;">✅ Todo bajo control en las reglas seleccionadas</div>';
+      return;
+    }
+
+    var html = '<table style="width:100%; border-collapse:collapse;">';
+    html += '<thead><tr>';
+    html += '<th style="background:#018A80; color:white; padding:10px 14px; font-size:11px; font-weight:600; text-align:left;">Vehículo</th>';
+    html += '<th style="background:#018A80; color:white; padding:10px 14px; font-size:11px; font-weight:600; text-align:left;">Total</th>';
+    html += '<th style="background:#018A80; color:white; padding:10px 14px; font-size:11px; font-weight:600; text-align:left;">Conducción Distraída</th>';
+    html += '<th style="background:#018A80; color:white; padding:10px 14px; font-size:11px; font-weight:600; text-align:left;">Uso de Celular</th>';
+    html += '<th style="background:#018A80; color:white; padding:10px 14px; font-size:11px; font-weight:600; text-align:left;">Bostezo / Somnolencia</th>';
+    html += '<th style="background:#018A80; color:white; padding:10px 14px; font-size:11px; font-weight:600; text-align:left;">Estado</th>';
+    html += '</tr></thead><tbody>';
+
+    for (var i = 0; i < data.length; i++) {
+      var v = data[i];
+      var isAlert = v.total >= ADDIN_CONFIG.alertThreshold;
+      var isWarn  = v.total >= Math.floor(ADDIN_CONFIG.alertThreshold * 0.7) && !isAlert;
+      
+      var rowBg = isAlert ? 'background:#fff0f0;' : (i % 2 === 0 ? 'background:#ffffff;' : 'background:#f9fffe;');
+      var numColor = isAlert ? 'color:#e74c3c;' : (isWarn ? 'color:#e67e22;' : 'color:#27ae60;');
+      
+      var tagHtml = isAlert ? '<span style="background:#fce4e4; color:#c0392b; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700;">🚨 ALERTA</span>' : (isWarn ? '<span style="background:#fef3cd; color:#856404; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700;">⚠ Atención</span>' : '<span style="background:#d5f5e3; color:#1a7a3c; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700;">OK</span>');
+      var emailBadge = alertsSent[v.deviceId] ? ' <span style="background:#d5f5e3; color:#1a7a3c; padding:2px 6px; border-radius:10px; font-size:9px; font-weight:600; margin-left:4px;">📧 Correo</span>' : '';
+
+      html += '<tr style="' + rowBg + '" data-name="' + escHtml(v.deviceName.toLowerCase()) + '">';
+      // Enlace dinámico directo al mapa/perfil de MyGeotab
+      html += '<td style="padding:10px 14px; font-size:12px; border-bottom:1px solid #eee;"><a href="#" onclick="event.preventDefault(); window.parent.location.hash=\'device,id:\'+\'' + v.deviceId + '\';" style="color:#2563eb; font-weight:bold; cursor:pointer; text-decoration:underline;">' + escHtml(v.deviceName) + '</a></td>';
+      html += '<td style="padding:10px 14px; font-size:12px; border-bottom:1px solid #eee; font-weight:700; font-size:15px; ' + numColor + '">' + v.total + '</td>';
+      html += '<td style="padding:10px 14px; font-size:12px; border-bottom:1px solid #eee;">' + v.counts.distraccion + '</td>';
+      html += '<td style="padding:10px 14px; font-size:12px; border-bottom:1px solid #eee;">' + v.counts.celular + '</td>';
+      html += '<td style="padding:10px 14px; font-size:12px; border-bottom:1px solid #eee;">' + v.counts.bostezo + '</td>';
+      html += '<td style="padding:10px 14px; font-size:12px; border-bottom:1px solid #eee;">' + tagHtml + emailBadge + '</td>';
+      html += '</tr>';
+    }
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  }
+
+  window.filterTable = function() {
+    var q = document.getElementById('tableFilter').value.toLowerCase();
+    var rows = document.querySelectorAll('#tableContainer tbody tr');
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      r.style.display = (!q || r.getAttribute('data-name').indexOf(q) !== -1) ? '' : 'none';
+    }
+  };
+
+  function renderAlerts(vehicles, time) {
+    var container = document.getElementById('alertsContainer');
+    container.innerHTML = '';
+    vehicles.forEach(function(v) {
+      var div = document.createElement('div');
+      div.style.cssText = 'background:#fff0f0; border-left:4px solid #e74c3c; border-radius:6px; padding:12px 16px; margin-bottom:10px;';
+      div.innerHTML = '<div style="font-weight:700; font-size:13px; margin-bottom:4px; color:#c0392b;">🚨 CRÍTICO — ' + escHtml(v.deviceName) + '</div>'
+        + '<div style="font-size:12px; color:#666;">' + v.total + ' riesgos en la última hora (Distracción: ' + v.counts.distraccion + ' | Celular: ' + v.counts.celular + ' | Bostezo: ' + v.counts.bostezo + ') — ' + formatTime(time) + '</div>';
+      container.appendChild(div);
+    });
+  }
+  function clearAlerts() { document.getElementById('alertsContainer').innerHTML = ''; }
+
+  function sendAlertEmail(vehicle, time) {
+    if (!window.emailjs) { return; }
+    emailjs.send(ADDIN_CONFIG.emailjs.serviceId, ADDIN_CONFIG.emailjs.templateId, {
+      to_email: ADDIN_CONFIG.targetEmail, vehicle_name: vehicle.deviceName,
+      total_events: vehicle.total, distraido: vehicle.counts.distraccion,
+      celular: vehicle.counts.celular, bostezo: vehicle.counts.bostezo,
+      time_window: ADDIN_CONFIG.timeWindowHours + ' hora(s)',
+      check_time: formatTime(time), group: ADDIN_CONFIG.groupName
+    }).then(function() { 
+      debugLog('Notificación despachada por EmailJS para ' + vehicle.deviceName);
+      renderTable(tableData); 
+    }).catch(function(err) { 
+      debugLog('Fallo Relay EmailJS: ' + JSON.stringify(err));
+    });
+  }
+
+  function setStatus(type, msg) {
+    var bar = document.getElementById('statusBarContainer');
+    var dot = document.getElementById('statusDot');
+    var c = '#27ae60';
+    if (type === 'loading') c = '#018A80';
+    if (type === 'warn') c = '#e67e22';
+    if (type === 'error') c = '#e74c3c';
+    
+    bar.style.borderLeftColor = c;
+    dot.style.background = c;
+    document.getElementById('statusMsg').innerHTML = '<span style="width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; background:' + c + ';"></span>' + msg;
+  }
+  
+  function updateStats(total, vehicles, alerts) {
+    document.getElementById('statTotal').textContent    = total;
+    document.getElementById('statVehicles').textContent = vehicles;
+    document.getElementById('statAlerts').textContent   = alerts;
+  }
+  
+  function updateLastCheck(time) {
+    document.getElementById('lastCheck').textContent = 'Última revisión: ' + formatTime(time);
+  }
+  
+  function formatTime(d) {
+    return d.toLocaleDateString('es-MX') + ' ' + d.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
+  }
+  
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+})();
+</script>
+
+</body>
+</html>
