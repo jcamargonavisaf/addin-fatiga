@@ -17,123 +17,109 @@
 
     /* ── Header ── */
     .header {
-      background: #018A80;
+      background: linear-gradient(135deg, #018A80 0%, #016d65 100%);
       color: white;
       padding: 14px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
     }
-    .header h1 { font-size: 16px; font-weight: 600; letter-spacing: 0.3px; }
+    .header h1 { font-size: 16px; font-weight: 700; letter-spacing: 0.3px; }
     .header-right { display: flex; align-items: center; gap: 10px; }
+    #btnCheck {
+      background: white;
+      color: #018A80;
+      border: none;
+      padding: 7px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      transition: all 0.2s;
+    }
+    #btnCheck:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    #btnCheck:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     .badge-group {
       background: rgba(255,255,255,0.25);
       color: white;
       padding: 4px 12px;
       border-radius: 12px;
       font-size: 12px;
+      font-weight: 600;
     }
-    #btnCheck {
-      background: white;
-      color: #018A80;
-      border: none;
-      padding: 7px 18px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 700;
-      transition: opacity 0.2s;
-    }
-    #btnCheck:hover { opacity: 0.85; }
-    #btnCheck:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    /* ── Container ── */
     .container { padding: 16px 20px; }
 
     /* ── Status bar ── */
     .status-bar {
       background: white;
-      border-radius: 6px;
+      border-radius: 8px;
       padding: 10px 16px;
       margin-bottom: 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.07);
       font-size: 12px;
-      color: #555;
-      border-left: 4px solid #27ae60;
+      color: #666;
     }
-    .status-bar.status-warn { border-left-color: #e67e22; }
-    .status-bar.status-error { border-left-color: #e74c3c; }
-    .status-bar.status-loading { border-left-color: #018A80; }
-
     .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-    .dot-ok { background: #27ae60; }
-    .dot-warn { background: #e67e22; }
+    .dot-ok    { background: #27ae60; }
+    .dot-warn  { background: #e67e22; }
     .dot-error { background: #e74c3c; }
     .dot-loading { background: #018A80; animation: pulse 1s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-    .spinner {
-      display: inline-block; width: 13px; height: 13px;
-      border: 2px solid rgba(255,255,255,0.4); border-top-color: #018A80;
-      border-radius: 50%; animation: spin 0.7s linear infinite;
-      vertical-align: middle; margin-right: 6px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── Alert banners ── */
+    /* ── Alert banner ── */
     .alert-banner {
       background: #fff0f0;
       border-left: 4px solid #e74c3c;
       border-radius: 6px;
       padding: 12px 16px;
       margin-bottom: 10px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
     }
-    .alert-banner .alert-title { font-weight: 700; font-size: 13px; margin-bottom: 3px; color: #c0392b; }
+    .alert-banner .alert-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; color: #c0392b; }
     .alert-banner .alert-detail { font-size: 12px; color: #666; }
 
     /* ── Stat cards ── */
-    .stats-row { display: flex; gap: 12px; margin-bottom: 16px; }
+    .stats-row { display: flex; gap: 14px; margin-bottom: 16px; }
     .stat-card {
       flex: 1;
-      border-radius: 8px;
+      border-radius: 10px;
       padding: 16px 18px;
       text-align: center;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.12);
       color: white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
     }
-    .stat-card.card-teal  { background: linear-gradient(135deg, #018A80, #01b09f); }
-    .stat-card.card-blue  { background: linear-gradient(135deg, #2471a3, #3498db); }
-    .stat-card.card-red   { background: linear-gradient(135deg, #a93226, #e74c3c); }
-    .stat-card .stat-value { font-size: 32px; font-weight: 700; line-height: 1; }
-    .stat-card .stat-label { font-size: 11px; opacity: 0.88; margin-top: 5px; }
+    .stat-card.teal  { background: linear-gradient(135deg, #018A80, #01b4a6); }
+    .stat-card.blue  { background: linear-gradient(135deg, #2980b9, #3498db); }
+    .stat-card.red   { background: linear-gradient(135deg, #c0392b, #e74c3c); }
+    .stat-card .stat-value { font-size: 32px; font-weight: 800; }
+    .stat-card .stat-label { font-size: 11px; opacity: 0.9; margin-top: 4px; }
 
-    /* ── Table section ── */
+    /* ── Table ── */
     .table-section {
       background: white;
-      border-radius: 8px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.09);
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       overflow: hidden;
     }
     .table-header {
-      padding: 11px 16px;
-      font-weight: 700;
+      padding: 12px 16px;
+      font-weight: 600;
       font-size: 13px;
-      border-bottom: 2px solid #018A80;
+      border-bottom: 1px solid #eee;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      color: #018A80;
-      background: #f8fffe;
+      color: #444;
     }
     .filter-input {
-      border: 1px solid #cce8e6;
-      border-radius: 4px;
-      padding: 5px 10px;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      padding: 5px 12px;
       font-size: 12px;
       outline: none;
       width: 180px;
@@ -144,56 +130,72 @@
     thead th {
       background: #018A80;
       color: white;
-      padding: 9px 14px;
+      padding: 11px 14px;
       text-align: left;
       font-size: 12px;
       font-weight: 600;
       white-space: nowrap;
     }
     tbody tr { border-bottom: 1px solid #f0f0f0; transition: background 0.15s; }
-    tbody tr:nth-child(even) { background: #f9fffe; }
-    tbody tr:hover { background: #e8f8f5; }
-    tbody tr.row-alert { background: #fff0f0; }
-    tbody tr.row-alert:hover { background: #ffe4e4; }
+    tbody tr:hover { background: #f8fffe; }
+    tbody tr.row-alert { background: #fff5f5; }
+    tbody tr.row-alert:hover { background: #ffeeee; }
     tbody td { padding: 10px 14px; font-size: 13px; }
 
-    .tag { display: inline-block; padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: 700; }
-    .tag-ok    { background: #d5f5e3; color: #1a7a3c; }
-    .tag-alert { background: #fce4e4; color: #c0392b; }
-    .tag-warn  { background: #fef3cd; color: #856404; }
+    .tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .tag-ok   { background: #d5f5e3; color: #1a7a3c; }
+    .tag-alert{ background: #fce4e4; color: #c0392b; }
+    .tag-warn { background: #fef3cd; color: #856404; }
 
     .count-cell { font-weight: 700; font-size: 15px; }
-    .count-alert { color: #e74c3c; }
-    .count-warn  { color: #e67e22; }
-    .count-ok    { color: #27ae60; }
+    .count-alert{ color: #e74c3c; }
+    .count-warn { color: #e67e22; }
+    .count-ok   { color: #27ae60; }
 
-    .empty-state { text-align: center; padding: 44px 20px; color: #aaa; font-size: 13px; }
-    .empty-state .icon { font-size: 40px; margin-bottom: 10px; }
+    .empty-state { text-align: center; padding: 40px 20px; color: #aaa; font-size: 13px; }
+    .empty-state .icon { font-size: 36px; margin-bottom: 8px; }
 
     .email-sent-badge {
       background: #d5f5e3; color: #1a7a3c;
       padding: 2px 8px; border-radius: 10px;
-      font-size: 10px; font-weight: 700; margin-left: 4px;
+      font-size: 10px; font-weight: 600;
     }
+
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #ccc;
+      border-top-color: #018A80;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     @media (max-width: 600px) {
       .stats-row { flex-wrap: wrap; }
-      .stat-card { min-width: 120px; }
+      .stat-card { min-width: calc(50% - 7px); }
     }
   </style>
 </head>
 <body>
 
+<!-- CONFIGURACIÓN -->
 <script>
-/* ============================================================
-   CONFIGURACIÓN
-   ============================================================ */
 var ADDIN_CONFIG = {
-  groupName:        'LHRMXCO',
-  alertThreshold:   10,
-  timeWindowHours:  1,
-  refreshMinutes:   5,
-  targetEmail:      'jcamargo@navisaf.com',
+  groupName:       'LHRMXCO',
+  database:        'lhmrxco',
+  alertThreshold:  10,
+  timeWindowHours: 1,
+  refreshMinutes:  5,
+  targetEmail:     'jcamargo@navisaf.com',
   emailjs: {
     publicKey:  'w0qHujgXAi0v9CJkH',
     serviceId:  'service_9jj0dzl',
@@ -219,27 +221,27 @@ var ADDIN_CONFIG = {
 
 <div class="container">
 
-  <div class="status-bar" id="statusBar">
+  <div class="status-bar">
     <div id="statusMsg">
-      <span class="status-dot dot-ok"></span>Listo — presiona "Verificar ahora" o espera el refresco automático
+      <span class="status-dot dot-ok"></span>Listo — presiona "Verificar ahora"
     </div>
-    <div id="lastCheck" style="color:#aaa;font-size:11px;">—</div>
+    <div id="lastCheck" style="color:#aaa;">—</div>
   </div>
 
   <div id="alertsContainer"></div>
 
   <div class="stats-row">
-    <div class="stat-card card-teal">
+    <div class="stat-card teal">
       <div class="stat-value" id="statTotal">—</div>
       <div class="stat-label">Eventos totales (última hora)</div>
     </div>
-    <div class="stat-card card-blue">
+    <div class="stat-card blue">
       <div class="stat-value" id="statVehicles">—</div>
       <div class="stat-label">Vehículos con eventos</div>
     </div>
-    <div class="stat-card card-red" id="cardAlerts">
+    <div class="stat-card red">
       <div class="stat-value" id="statAlerts">—</div>
-      <div class="stat-label">Vehículos con alerta (≥ 10 eventos)</div>
+      <div class="stat-label">Vehículos en alerta (≥10)</div>
     </div>
   </div>
 
@@ -247,7 +249,7 @@ var ADDIN_CONFIG = {
     <div class="table-header">
       <span>Detalle por vehículo</span>
       <input type="text" class="filter-input" id="tableFilter"
-             placeholder="Buscar vehículo..." oninput="filterTable()" />
+             placeholder="🔍 Buscar vehículo..." oninput="filterTable()" />
     </div>
     <div id="tableContainer">
       <div class="empty-state">
@@ -259,37 +261,57 @@ var ADDIN_CONFIG = {
 
 </div>
 
+<!-- ADD-IN LOGIC -->
 <script>
 (function() {
   'use strict';
 
-  var geotabApi = null;
+  var geotabApi    = null;
   var refreshTimer = null;
-  var tableData = [];
-  var alertsSent = {};
-  var ruleCache = {};
+  var tableData    = [];
+  var alertsSent   = {};
+  var ruleCache    = {};
+  var groupId      = null;
 
-  geotab.addin.monitorFatigaDistraccion = function(api, state) {
+  if (!window.geotab)       { window.geotab = {}; }
+  if (!window.geotab.addin) { window.geotab.addin = {}; }
+
+  window.geotab.addin.monitorFatigaDistraccion = function(api, state) {
     geotabApi = api;
     return {
       initialize: function(freshApi, freshState, callback) {
         geotabApi = freshApi;
-        emailjs.init(ADDIN_CONFIG.emailjs.publicKey);
+        if (window.emailjs) { emailjs.init(ADDIN_CONFIG.emailjs.publicKey); }
         callback();
       },
       focus: function(freshApi, freshState) {
         geotabApi = freshApi;
         document.getElementById('lblGroup').textContent = ADDIN_CONFIG.groupName;
-        runCheck();
-        startAutoRefresh();
+        resolveGroupId(function() { runCheck(); startAutoRefresh(); });
       },
       blur: function() { stopAutoRefresh(); }
     };
   };
 
+  function resolveGroupId(callback) {
+    if (groupId) { callback(); return; }
+    geotabApi.call('Get', { typeName: 'Group', search: {} },
+      function(groups) {
+        var match = (groups || []).find(function(g) {
+          return g.name && g.name.toLowerCase() === ADDIN_CONFIG.groupName.toLowerCase();
+        });
+        if (match) { groupId = match.id; callback(); }
+        else { setStatus('error', 'Grupo "' + ADDIN_CONFIG.groupName + '" no encontrado.'); }
+      },
+      function(err) {
+        setStatus('error', 'Error al obtener grupos: ' + (err.message || err));
+      }
+    );
+  }
+
   function startAutoRefresh() {
     stopAutoRefresh();
-    refreshTimer = setInterval(runCheck, ADDIN_CONFIG.refreshMinutes * 60 * 1000);
+    refreshTimer = setInterval(function() { resolveGroupId(runCheck); }, ADDIN_CONFIG.refreshMinutes * 60000);
   }
   function stopAutoRefresh() {
     if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
@@ -300,38 +322,43 @@ var ADDIN_CONFIG = {
     setStatus('loading', 'Consultando eventos...');
     document.getElementById('btnCheck').disabled = true;
 
-    var now = new Date();
-    var fromDate = new Date(now.getTime() - ADDIN_CONFIG.timeWindowHours * 60 * 60 * 1000);
+    var now      = new Date();
+    var fromDate = new Date(now.getTime() - ADDIN_CONFIG.timeWindowHours * 3600000);
 
     geotabApi.call('Get', {
       typeName: 'ExceptionEvent',
       search: {
         fromDate: fromDate.toISOString(),
-        toDate: now.toISOString(),
-        deviceSearch: { groups: [{ name: ADDIN_CONFIG.groupName }] }
+        toDate:   now.toISOString(),
+        deviceSearch: { groups: [{ id: groupId }] }
       }
-    }, function(events) {
+    },
+    function(events) {
       if (!events || events.length === 0) {
         setStatus('ok', 'Sin eventos en la última hora');
-        updateStats(0, 0, 0);
-        renderTable([]);
-        document.getElementById('alertsContainer').innerHTML = '';
+        updateStats(0, 0, 0); renderTable([]); clearAlerts();
         document.getElementById('btnCheck').disabled = false;
-        updateLastCheck(now);
-        return;
+        updateLastCheck(now); return;
       }
-      var ruleIds = [];
+
+      var uncached = [];
       events.forEach(function(e) {
-        if (e.rule && e.rule.id && ruleIds.indexOf(e.rule.id) === -1) ruleIds.push(e.rule.id);
+        if (e.rule && e.rule.id && !ruleCache[e.rule.id] && uncached.indexOf(e.rule.id) === -1)
+          uncached.push(e.rule.id);
       });
-      var uncached = ruleIds.filter(function(id) { return !ruleCache[id]; });
+
       if (uncached.length === 0) { processEvents(events, now); return; }
-      geotabApi.call('Get', { typeName: 'ExceptionRule', search: {} }, function(rules) {
-        (rules || []).forEach(function(r) { ruleCache[r.id] = r.name || ''; });
-        processEvents(events, now);
-      }, function() { processEvents(events, now); });
-    }, function(err) {
-      setStatus('error', 'Error: ' + (err.message || err));
+
+      geotabApi.call('Get', { typeName: 'ExceptionRule', search: {} },
+        function(rules) {
+          (rules || []).forEach(function(r) { ruleCache[r.id] = r.name || ''; });
+          processEvents(events, now);
+        },
+        function() { processEvents(events, now); }
+      );
+    },
+    function(err) {
+      setStatus('error', 'Error Geotab: ' + (err.message || err));
       document.getElementById('btnCheck').disabled = false;
     });
   };
@@ -346,7 +373,10 @@ var ADDIN_CONFIG = {
     filtered.forEach(function(e) {
       var devId = e.device && e.device.id;
       if (!devId) return;
-      if (!byDevice[devId]) byDevice[devId] = { deviceId: devId, deviceName: '', counts: { distraccion: 0, celular: 0, bostezo: 0 }, total: 0 };
+      if (!byDevice[devId]) byDevice[devId] = {
+        deviceId: devId, deviceName: '', total: 0,
+        counts: { distraccion: 0, celular: 0, bostezo: 0, otros: 0 }
+      };
       byDevice[devId].total++;
       var rn = (ruleCache[e.rule && e.rule.id] || '').toLowerCase();
       if (['distraíd','distraida','distracted','distraccion','distracción'].some(function(k){return rn.indexOf(k)!==-1;}))
@@ -355,74 +385,72 @@ var ADDIN_CONFIG = {
         byDevice[devId].counts.celular++;
       else if (['bostezo','yawn','somnolencia','drowsy','microsueño','fatiga','fatigue'].some(function(k){return rn.indexOf(k)!==-1;}))
         byDevice[devId].counts.bostezo++;
+      else
+        byDevice[devId].counts.otros++;
     });
 
     var deviceIds = Object.keys(byDevice);
     if (deviceIds.length === 0) {
       setStatus('ok', 'Sin eventos coincidentes en la última hora');
-      updateStats(events.length, 0, 0);
-      renderTable([]);
-      document.getElementById('alertsContainer').innerHTML = '';
-      document.getElementById('btnCheck').disabled = false;
-      updateLastCheck(checkTime);
-      return;
+      updateStats(events.length, 0, 0); renderTable([]); clearAlerts();
+      document.getElementById('btnCheck').disabled = false; updateLastCheck(checkTime); return;
     }
 
-    geotabApi.call('Get', { typeName: 'Device', search: { groups: [{ name: ADDIN_CONFIG.groupName }] } },
-    function(devices) {
-      var nameMap = {};
-      (devices || []).forEach(function(d) { nameMap[d.id] = d.name || d.id; });
-      deviceIds.forEach(function(id) { byDevice[id].deviceName = nameMap[id] || id; });
+    geotabApi.call('Get', { typeName: 'Device', search: { groups: [{ id: groupId }] } },
+      function(devices) {
+        var nameMap = {};
+        (devices || []).forEach(function(d) { nameMap[d.id] = d.name || d.id; });
+        deviceIds.forEach(function(id) { byDevice[id].deviceName = nameMap[id] || id; });
 
-      tableData = deviceIds.map(function(id) { return byDevice[id]; });
-      tableData.sort(function(a, b) { return b.total - a.total; });
+        tableData = deviceIds.map(function(id) { return byDevice[id]; });
+        tableData.sort(function(a, b) { return b.total - a.total; });
 
-      var alertVehicles = tableData.filter(function(v) { return v.total >= ADDIN_CONFIG.alertThreshold; });
+        var alertVehicles = tableData.filter(function(v) { return v.total >= ADDIN_CONFIG.alertThreshold; });
+        updateStats(filtered.length, tableData.length, alertVehicles.length);
+        renderTable(tableData);
+        renderAlerts(alertVehicles, checkTime);
 
-      updateStats(filtered.length, tableData.length, alertVehicles.length);
-      renderTable(tableData);
-      renderAlerts(alertVehicles, checkTime);
+        alertVehicles.forEach(function(v) {
+          var last = alertsSent[v.deviceId];
+          if (!last || (Date.now() - last) > 3600000) {
+            sendAlertEmail(v, checkTime);
+            alertsSent[v.deviceId] = Date.now();
+          }
+        });
 
-      alertVehicles.forEach(function(v) {
-        var lastSent = alertsSent[v.deviceId];
-        var now = Date.now();
-        if (!lastSent || (now - lastSent) > 60 * 60 * 1000) {
-          sendAlertEmail(v, checkTime);
-          alertsSent[v.deviceId] = now;
-        }
-      });
-
-      setStatus(alertVehicles.length > 0 ? 'warn' : 'ok',
-        alertVehicles.length > 0
-          ? '⚠ ' + alertVehicles.length + ' vehículo(s) superan el umbral de ' + ADDIN_CONFIG.alertThreshold + ' eventos'
-          : 'OK — ningún vehículo supera el umbral');
-      document.getElementById('btnCheck').disabled = false;
-      updateLastCheck(checkTime);
-    },
-    function() {
-      deviceIds.forEach(function(id) { byDevice[id].deviceName = id; });
-      tableData = deviceIds.map(function(id) { return byDevice[id]; });
-      tableData.sort(function(a, b) { return b.total - a.total; });
-      renderTable(tableData);
-      setStatus('ok', 'Listo');
-      document.getElementById('btnCheck').disabled = false;
-      updateLastCheck(checkTime);
-    });
+        var msg = alertVehicles.length > 0
+          ? ('⚠ ' + alertVehicles.length + ' vehículo(s) superan el umbral de ' + ADDIN_CONFIG.alertThreshold + ' eventos')
+          : 'OK — ningún vehículo supera el umbral';
+        setStatus(alertVehicles.length > 0 ? 'warn' : 'ok', msg);
+        document.getElementById('btnCheck').disabled = false;
+        updateLastCheck(checkTime);
+      },
+      function() {
+        deviceIds.forEach(function(id) { byDevice[id].deviceName = id; });
+        tableData = deviceIds.map(function(id) { return byDevice[id]; });
+        tableData.sort(function(a, b) { return b.total - a.total; });
+        renderTable(tableData);
+        setStatus('ok', 'Listo (sin nombres de vehículos)');
+        document.getElementById('btnCheck').disabled = false;
+        updateLastCheck(checkTime);
+      }
+    );
   }
 
   function renderTable(data) {
     var container = document.getElementById('tableContainer');
     if (data.length === 0) {
-      container.innerHTML = '<div class="empty-state"><div class="icon">✅</div>Sin eventos de fatiga o distracción en la última hora</div>';
+      container.innerHTML = '<div class="empty-state"><div class="icon">✅</div>Sin eventos en la última hora</div>';
       return;
     }
     var rows = data.map(function(v) {
       var isAlert = v.total >= ADDIN_CONFIG.alertThreshold;
       var isWarn  = v.total >= Math.floor(ADDIN_CONFIG.alertThreshold * 0.7) && !isAlert;
       var countClass = isAlert ? 'count-alert' : (isWarn ? 'count-warn' : 'count-ok');
-      var tag = isAlert ? '<span class="tag tag-alert">🚨 ALERTA</span>'
-        : (isWarn ? '<span class="tag tag-warn">⚠ Atención</span>' : '<span class="tag tag-ok">OK</span>');
-      var emailBadge = alertsSent[v.deviceId] ? '<span class="email-sent-badge">📧 Correo enviado</span>' : '';
+      var tag = isAlert
+        ? '<span class="tag tag-alert">🚨 ALERTA</span>'
+        : (isWarn ? '<span class="tag tag-warn">⚠ Atención</span>' : '<span class="tag tag-ok">✔ OK</span>');
+      var emailBadge = alertsSent[v.deviceId] ? ' <span class="email-sent-badge">📧 Correo enviado</span>' : '';
       return '<tr class="' + (isAlert ? 'row-alert' : '') + '" data-name="' + escHtml(v.deviceName.toLowerCase()) + '">'
         + '<td><strong>' + escHtml(v.deviceName) + '</strong></td>'
         + '<td class="count-cell ' + countClass + '">' + v.total + '</td>'
@@ -432,10 +460,11 @@ var ADDIN_CONFIG = {
         + '<td>' + tag + emailBadge + '</td>'
         + '</tr>';
     }).join('');
-    container.innerHTML = '<table><thead><tr>'
-      + '<th>Vehículo</th><th>Total eventos</th><th>Conducción distraída</th>'
-      + '<th>Uso de celular</th><th>Bostezo / Somnolencia</th><th>Estado</th>'
-      + '</tr></thead><tbody>' + rows + '</tbody></table>';
+    container.innerHTML = '<table>'
+      + '<thead><tr><th>Vehículo</th><th>Total eventos</th>'
+      + '<th>Conducción distraída</th><th>Uso de celular</th>'
+      + '<th>Bostezo / Somnolencia</th><th>Estado</th></tr></thead>'
+      + '<tbody>' + rows + '</tbody></table>';
   }
 
   window.filterTable = function() {
@@ -452,53 +481,46 @@ var ADDIN_CONFIG = {
       var div = document.createElement('div');
       div.className = 'alert-banner';
       div.innerHTML = '<div class="alert-title">🚨 ALERTA — ' + escHtml(v.deviceName) + '</div>'
-        + '<div class="alert-detail">' + v.total + ' eventos en la última hora '
-        + '(Distraído: ' + v.counts.distraccion + ' | Celular: ' + v.counts.celular
-        + ' | Bostezo: ' + v.counts.bostezo + ') — ' + formatTime(time) + '</div>';
+        + '<div class="alert-detail">' + v.total + ' eventos en la última hora'
+        + ' (Distraído: ' + v.counts.distraccion
+        + ' | Celular: ' + v.counts.celular
+        + ' | Bostezo: ' + v.counts.bostezo + ')'
+        + ' — ' + formatTime(time) + '</div>';
       container.appendChild(div);
     });
   }
+  function clearAlerts() { document.getElementById('alertsContainer').innerHTML = ''; }
 
   function sendAlertEmail(vehicle, time) {
+    if (!window.emailjs) { return; }
     emailjs.send(ADDIN_CONFIG.emailjs.serviceId, ADDIN_CONFIG.emailjs.templateId, {
-      to_email:     ADDIN_CONFIG.targetEmail,
-      vehicle_name: vehicle.deviceName,
-      total_events: vehicle.total,
-      distraido:    vehicle.counts.distraccion,
-      celular:      vehicle.counts.celular,
-      bostezo:      vehicle.counts.bostezo,
-      time_window:  ADDIN_CONFIG.timeWindowHours + ' hora(s)',
-      check_time:   formatTime(time),
-      group:        ADDIN_CONFIG.groupName
-    }).then(function() {
-      renderTable(tableData);
-    }).catch(function(err) {
-      console.error('Error enviando correo:', err);
-    });
+      to_email: ADDIN_CONFIG.targetEmail, vehicle_name: vehicle.deviceName,
+      total_events: vehicle.total, distraido: vehicle.counts.distraccion,
+      celular: vehicle.counts.celular, bostezo: vehicle.counts.bostezo,
+      time_window: ADDIN_CONFIG.timeWindowHours + ' hora(s)',
+      check_time: formatTime(time), group: ADDIN_CONFIG.groupName
+    }).then(function() { renderTable(tableData); })
+      .catch(function(err) { console.error('EmailJS error:', err); });
   }
 
   function setStatus(type, msg) {
-    var bar = document.getElementById('statusBar');
-    bar.className = 'status-bar' + (type === 'warn' ? ' status-warn' : type === 'error' ? ' status-error' : type === 'loading' ? ' status-loading' : '');
     var dotClass = { ok:'dot-ok', warn:'dot-warn', error:'dot-error', loading:'dot-loading' }[type] || 'dot-ok';
-    var prefix = type === 'loading' ? '<span class="spinner"></span>' : '<span class="status-dot ' + dotClass + '"></span>';
+    var prefix = type === 'loading'
+      ? '<span class="spinner"></span>'
+      : '<span class="status-dot ' + dotClass + '"></span>';
     document.getElementById('statusMsg').innerHTML = prefix + msg;
   }
-
   function updateStats(total, vehicles, alerts) {
-    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statTotal').textContent    = total;
     document.getElementById('statVehicles').textContent = vehicles;
-    document.getElementById('statAlerts').textContent = alerts;
+    document.getElementById('statAlerts').textContent   = alerts;
   }
-
   function updateLastCheck(time) {
     document.getElementById('lastCheck').textContent = 'Última revisión: ' + formatTime(time);
   }
-
   function formatTime(d) {
-    return d.toLocaleDateString('es-MX') + ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleDateString('es-MX') + ' ' + d.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
   }
-
   function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
