@@ -330,4 +330,62 @@ var ADDIN_CONFIG = {
     vehicles.forEach(function(v) {
       var div = document.createElement('div');
       div.style.cssText = 'background:#fff0f0; border-left:4px solid #e74c3c; border-radius:6px; padding:12px 16px; margin-bottom:10px;';
-      div.innerHTML = '<div style="font-weight:700; font-size:13px; margin-bottom:4px; color:#c0392b;">🚨 ALERTA CRÍTICA — ' + escHtml(v.deviceName)
+      div.innerHTML = '<div style="font-weight:700; font-size:13px; margin-bottom:4px; color:#c0392b;">🚨 ALERTA CRÍTICA — ' + escHtml(v.deviceName) + '</div>'
+        + '<div style="font-size:12px; color:#666;">' + v.total + ' eventos acumulados (Distraído: ' + v.counts.distraccion + ' | Celular: ' + v.counts.celular + ' | Bostezo: ' + v.counts.bostezo + ') — ' + formatTime(time) + '</div>';
+      container.appendChild(div);
+    });
+  }
+  function clearAlerts() { document.getElementById('alertsContainer').innerHTML = ''; }
+
+  function sendAlertEmail(vehicle, time) {
+    if (!window.emailjs) { return; }
+    emailjs.send(ADDIN_CONFIG.emailjs.serviceId, ADDIN_CONFIG.emailjs.templateId, {
+      to_email: ADDIN_CONFIG.targetEmail, vehicle_name: vehicle.deviceName,
+      total_events: vehicle.total, distraido: vehicle.counts.distraccion,
+      celular: vehicle.counts.celular, bostezo: vehicle.counts.bostezo,
+      time_window: ADDIN_CONFIG.timeWindowHours + ' hora(s)',
+      check_time: formatTime(time), group: ADDIN_CONFIG.groupName
+    }).then(function() { 
+      debugLog('Email enviado con éxito a: ' + vehicle.deviceName);
+      renderTable(tableData); 
+    }).catch(function(err) { 
+      debugLog('Error EmailJS: ' + JSON.stringify(err));
+    });
+  }
+
+  function setStatus(type, msg) {
+    var bar = document.getElementById('statusBarContainer');
+    var dot = document.getElementById('statusDot');
+    var c = '#27ae60';
+    if (type === 'loading') c = '#018A80';
+    if (type === 'warn') c = '#e67e22';
+    if (type === 'error') c = '#e74c3c';
+    
+    bar.style.borderLeftColor = c;
+    dot.style.background = c;
+    document.getElementById('statusMsg').innerHTML = '<span style="width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; background:' + c + ';"></span>' + msg;
+  }
+  
+  function updateStats(total, vehicles, alerts) {
+    document.getElementById('statTotal').textContent    = total;
+    document.getElementById('statVehicles').textContent = vehicles;
+    document.getElementById('statAlerts').textContent   = alerts;
+  }
+  
+  function updateLastCheck(time) {
+    document.getElementById('lastCheck').textContent = 'Última revisión: ' + formatTime(time);
+  }
+  
+  function formatTime(d) {
+    return d.toLocaleDateString('es-MX') + ' ' + d.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
+  }
+  
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+})();
+</script>
+
+</body>
+</html>
