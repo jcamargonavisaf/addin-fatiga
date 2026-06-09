@@ -3,7 +3,7 @@
   "supportEmail": "jcamargo@navisaf.com",
   "items": [
     {
-      "page": "map",
+      "page": "customPage",
       "title": {
         "es": "Monitor Fatiga",
         "en": "Fatigue Monitor"
@@ -13,7 +13,7 @@
         "en": "Fatigue & Distraction Monitor"
       },
       "icon": "https://raw.githubusercontent.com/Geotab/sdk/master/src/software/guides/img/icon.svg",
-      "path": "index.html"
+      "path": "https://jcamargonavisaf.github.io/addin-fatiga/index.html"
     }
   ],
   "isSigned": false
