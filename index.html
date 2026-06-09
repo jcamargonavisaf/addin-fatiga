@@ -5,189 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Monitor Fatiga y Distracción</title>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: #f0f4f8;
-      color: #2c3e50;
-      font-size: 14px;
-    }
-
-    /* ── Header ── */
-    .header {
-      background: linear-gradient(135deg, #018A80 0%, #016d65 100%);
-      color: white;
-      padding: 14px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-    }
-    .header h1 { font-size: 16px; font-weight: 700; letter-spacing: 0.3px; }
-    .header-right { display: flex; align-items: center; gap: 10px; }
-    #btnCheck {
-      background: white;
-      color: #018A80;
-      border: none;
-      padding: 7px 16px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 700;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-      transition: all 0.2s;
-    }
-    #btnCheck:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-    #btnCheck:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .badge-group {
-      background: rgba(255,255,255,0.25);
-      color: white;
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .container { padding: 16px 20px; }
-
-    /* ── Status bar ── */
-    .status-bar {
-      background: white;
-      border-radius: 8px;
-      padding: 10px 16px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.07);
-      font-size: 12px;
-      color: #666;
-    }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-    .dot-ok    { background: #27ae60; }
-    .dot-warn  { background: #e67e22; }
-    .dot-error { background: #e74c3c; }
-    .dot-loading { background: #018A80; animation: pulse 1s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-    /* ── Alert banner ── */
-    .alert-banner {
-      background: #fff0f0;
-      border-left: 4px solid #e74c3c;
-      border-radius: 6px;
-      padding: 12px 16px;
-      margin-bottom: 10px;
-    }
-    .alert-banner .alert-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; color: #c0392b; }
-    .alert-banner .alert-detail { font-size: 12px; color: #666; }
-
-    /* ── Stat cards ── */
-    .stats-row { display: flex; gap: 14px; margin-bottom: 16px; }
-    .stat-card {
-      flex: 1;
-      border-radius: 10px;
-      padding: 16px 18px;
-      text-align: center;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.12);
-      color: white;
-    }
-    .stat-card.teal  { background: linear-gradient(135deg, #018A80, #01b4a6); }
-    .stat-card.blue  { background: linear-gradient(135deg, #2980b9, #3498db); }
-    .stat-card.red   { background: linear-gradient(135deg, #c0392b, #e74c3c); }
-    .stat-card .stat-value { font-size: 32px; font-weight: 800; }
-    .stat-card .stat-label { font-size: 11px; opacity: 0.9; margin-top: 4px; }
-
-    /* ── Table ── */
-    .table-section {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      overflow: hidden;
-    }
-    .table-header {
-      padding: 12px 16px;
-      font-weight: 600;
-      font-size: 13px;
-      border-bottom: 1px solid #eee;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: #444;
-    }
-    .filter-input {
-      border: 1px solid #ddd;
-      border-radius: 20px;
-      padding: 5px 12px;
-      font-size: 12px;
-      outline: none;
-      width: 180px;
-    }
-    .filter-input:focus { border-color: #018A80; }
-
-    table { width: 100%; border-collapse: collapse; }
-    thead th {
-      background: #018A80;
-      color: white;
-      padding: 11px 14px;
-      text-align: left;
-      font-size: 12px;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-    tbody tr { border-bottom: 1px solid #f0f0f0; transition: background 0.15s; }
-    tbody tr:hover { background: #f8fffe; }
-    tbody tr.row-alert { background: #fff5f5; }
-    tbody tr.row-alert:hover { background: #ffeeee; }
-    tbody td { padding: 10px 14px; font-size: 13px; }
-
-    .tag {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 700;
-    }
-    .tag-ok   { background: #d5f5e3; color: #1a7a3c; }
-    .tag-alert{ background: #fce4e4; color: #c0392b; }
-    .tag-warn { background: #fef3cd; color: #856404; }
-
-    .count-cell { font-weight: 700; font-size: 15px; }
-    .count-alert{ color: #e74c3c; }
-    .count-warn { color: #e67e22; }
-    .count-ok   { color: #27ae60; }
-
-    .empty-state { text-align: center; padding: 40px 20px; color: #aaa; font-size: 13px; }
-    .empty-state .icon { font-size: 36px; margin-bottom: 8px; }
-
-    .email-sent-badge {
-      background: #d5f5e3; color: #1a7a3c;
-      padding: 2px 8px; border-radius: 10px;
-      font-size: 10px; font-weight: 600;
-    }
-
-    .spinner {
-      display: inline-block;
-      width: 14px; height: 14px;
-      border: 2px solid #ccc;
-      border-top-color: #018A80;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      vertical-align: middle;
-      margin-right: 6px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    @media (max-width: 600px) {
-      .stats-row { flex-wrap: wrap; }
-      .stat-card { min-width: calc(50% - 7px); }
-    }
-  </style>
 </head>
-<body>
+<body style="margin:0; padding:0; font-family:'Segoe UI', Arial, sans-serif; background:#f0f4f8; color:#2c3e50; font-size:14px;">
 
-<!-- CONFIGURACIÓN -->
 <script>
 var ADDIN_CONFIG = {
   groupName:       'LHRMXCO',
@@ -202,7 +22,7 @@ var ADDIN_CONFIG = {
     templateId: 'template_pkr52on'
   },
   eventKeywords: [
-    'distraíd','distraida','distracted','distraccion','distracción',
+    'distraíd','distraida','distracted','distraccion','distración',
     'celular','telefono','teléfono','phone','cellphone','movil','móvil',
     'bostezo','yawn','somnolencia','drowsy','microsueño','fatiga','fatigue',
     'surfsight'
@@ -210,58 +30,65 @@ var ADDIN_CONFIG = {
 };
 </script>
 
-<!-- Header -->
-<div class="header">
-  <h1>🚨 Monitor Fatiga y Distracción</h1>
-  <div class="header-right">
-    <span class="badge-group">📁 <span id="lblGroup">LHRMXCO</span></span>
-    <button id="btnCheck" onclick="runCheck()">▶ Verificar ahora</button>
-  </div>
-</div>
-
-<div class="container">
-
-  <div class="status-bar">
-    <div id="statusMsg">
-      <span class="status-dot dot-ok"></span>Listo — presiona "Verificar ahora"
-    </div>
-    <div id="lastCheck" style="color:#aaa;">—</div>
-  </div>
-
-  <div id="alertsContainer"></div>
-
-  <div class="stats-row">
-    <div class="stat-card teal">
-      <div class="stat-value" id="statTotal">—</div>
-      <div class="stat-label">Eventos totales (última hora)</div>
-    </div>
-    <div class="stat-card blue">
-      <div class="stat-value" id="statVehicles">—</div>
-      <div class="stat-label">Vehículos con eventos</div>
-    </div>
-    <div class="stat-card red">
-      <div class="stat-value" id="statAlerts">—</div>
-      <div class="stat-label">Vehículos en alerta (≥10)</div>
+<div style="max-width:860px; margin:20px auto; padding:0 10px;">
+  
+  <div style="background:#018A80; color:white; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; border-radius:8px 8px 0 0; box-shadow:0 2px 4px rgba(0,0,0,0.08);">
+    <h1 style="font-size:15px; font-weight:600; margin:0;">🚨 Monitor Fatiga y Distracción</h1>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <span style="background:rgba(255,255,255,0.25); padding:3px 10px; border-radius:12px; font-size:12px; font-weight:600;">📁 <span id="lblGroup">LHRMXCO</span></span>
+      <button id="btnCheck" onclick="runCheck()" style="background:white; color:#018A80; border:none; padding:6px 14px; border-radius:4px; font-weight:700; font-size:12px; cursor:pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">▶ Verificar ahora</button>
     </div>
   </div>
 
-  <div class="table-section">
-    <div class="table-header">
-      <span>Detalle por vehículo</span>
-      <input type="text" class="filter-input" id="tableFilter"
-             placeholder="🔍 Buscar vehículo..." oninput="filterTable()" />
+  <div style="background:#f0f4f8; padding:14px; border:1px solid #e1e8ed; border-top:none; border-radius:0 0 8px 8px;">
+    
+    <div style="background:white; border-radius:6px; padding:8px 14px; display:flex; justify-content:space-between; align-items:center; font-size:12px; color:#555; margin-bottom:12px; border-left:4px solid #27ae60; box-shadow:0 1px 3px rgba(0,0,0,0.05);" id="statusBarContainer">
+      <div id="statusMsg">
+        <span style="width:8px; height:8px; border-radius:50%; background:#27ae60; display:inline-block; margin-right:6px;" id="statusDot"></span>
+        Listo — presiona "Verificar ahora" o espera el refresco automático
+      </div>
+      <div id="lastCheck" style="color:#aaa; font-size:11px;">Última revisión: —</div>
     </div>
-    <div id="tableContainer">
-      <div class="empty-state">
-        <div class="icon">📡</div>
-        Presiona "Verificar ahora" para consultar los eventos
+
+    <div id="alertsContainer"></div>
+
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:12px;">
+      <div style="background:linear-gradient(135deg,#018A80,#01b09f); border-radius:8px; padding:14px 16px; text-align:center; color:white; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+        <div style="font-size:30px; font-weight:700;" id="statTotal">—</div>
+        <div style="font-size:11px; opacity:0.85; margin-top:2px;">Eventos totales (última hora)</div>
+      </div>
+      <div style="background:linear-gradient(135deg,#2980b9,#3498db); border-radius:8px; padding:14px 16px; text-align:center; color:white; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+        <div style="font-size:30px; font-weight:700;" id="statVehicles">—</div>
+        <div style="font-size:11px; opacity:0.85; margin-top:2px;">Vehículos con eventos</div>
+      </div>
+      <div style="background:linear-gradient(135deg,#c0392b,#e74c3c); border-radius:8px; padding:14px 16px; text-align:center; color:white; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+        <div style="font-size:30px; font-weight:700;" id="statAlerts">—</div>
+        <div style="font-size:11px; opacity:0.85; margin-top:2px;">Vehículos con alerta (≥ 10)</div>
       </div>
     </div>
-  </div>
 
+    <div style="background:white; border-radius:8px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.04); border:1px solid #e1e8ed;">
+      <div style="padding:10px 14px; display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #018A80;">
+        <span style="font-weight:700; font-size:13px; color:#018A80;">Detalle por vehículo</span>
+        <input id="tableFilter" oninput="filterTable()" style="border:1px solid #ddd; border-radius:4px; padding:4px 10px; font-size:12px; width:160px; outline:none;" placeholder="Buscar vehículo..." />
+      </div>
+      <div id="tableContainer">
+        <div style="text-align:center; padding:40px 20px; color:#aaa; font-size:13px;">
+          <div style="font-size:36px; margin-bottom:8px;">📡</div>
+          Presiona "Verificar ahora" para consultar los eventos
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
-<!-- ADD-IN LOGIC -->
+<div id="debug-toggle" style="position:fixed; bottom:0; left:0; right:0; text-align:center; z-index:9999;">
+  <button onclick="var d=document.getElementById('debug-log');d.style.display=d.style.display==='none'?'block':'none';" style="background:#e74c3c; color:#fff; border:none; padding:4px 16px; cursor:pointer; font-size:12px; border-radius:4px 4px 0 0;">Toggle Debug Log</button>
+  <button onclick="copyDebugData()" style="background:#f39c12; color:#fff; border:none; padding:4px 16px; cursor:pointer; font-size:12px; border-radius:4px 4px 0 0; margin-left:4px;">Copy Debug Data</button>
+  <pre id="debug-log" style="display:none; background:#1e1e1e; color:#0f0; padding:10px; margin:0; max-height:180px; overflow-y:auto; text-align:left; font-size:11px; font-family:monospace;"></pre>
+</div>
+
 <script>
 (function() {
   'use strict';
@@ -272,6 +99,33 @@ var ADDIN_CONFIG = {
   var alertsSent   = {};
   var ruleCache    = {};
   var groupId      = null;
+  var _debugData   = {};
+
+  function debugLog(msg) {
+    var el = document.getElementById('debug-log');
+    if (el) {
+      var time = new Date().toLocaleTimeString();
+      el.textContent += '[' + time + '] ' + msg + '\n';
+      el.scrollTop = el.scrollHeight;
+    }
+  }
+
+  function debugSample(key, arr) {
+    _debugData[key] = {
+      total: arr.length,
+      sample: arr.slice(0, 10)
+    };
+  }
+
+  window.copyDebugData = function() {
+    var t = document.createElement('textarea');
+    t.value = JSON.stringify(_debugData, null, 2);
+    document.body.appendChild(t);
+    t.select();
+    document.execCommand('copy');
+    document.body.removeChild(t);
+    alert('¡Datos de depuración guardados en el portapapeles! Si hay fallas, pégalos en el chat.');
+  };
 
   if (!window.geotab)       { window.geotab = {}; }
   if (!window.geotab.addin) { window.geotab.addin = {}; }
@@ -281,7 +135,11 @@ var ADDIN_CONFIG = {
     return {
       initialize: function(freshApi, freshState, callback) {
         geotabApi = freshApi;
-        if (window.emailjs) { emailjs.init(ADDIN_CONFIG.emailjs.publicKey); }
+        debugLog('Add-in inicializado externamente.');
+        if (window.emailjs) { 
+          emailjs.init(ADDIN_CONFIG.emailjs.publicKey); 
+          debugLog('Relay EmailJS preparado.');
+        }
         callback();
       },
       focus: function(freshApi, freshState) {
@@ -300,11 +158,18 @@ var ADDIN_CONFIG = {
         var match = (groups || []).find(function(g) {
           return g.name && g.name.toLowerCase() === ADDIN_CONFIG.groupName.toLowerCase();
         });
-        if (match) { groupId = match.id; callback(); }
-        else { setStatus('error', 'Grupo "' + ADDIN_CONFIG.groupName + '" no encontrado.'); }
+        if (match) { 
+          groupId = match.id; 
+          debugLog('Grupo resuelto: ' + groupId);
+          callback(); 
+        } else { 
+          setStatus('error', 'Grupo "' + ADDIN_CONFIG.groupName + '" no encontrado.'); 
+        }
       },
       function(err) {
-        setStatus('error', 'Error al obtener grupos: ' + (err.message || err));
+        var msg = err.message || err;
+        setStatus('error', 'Error al obtener grupos: ' + msg);
+        _debugData.groupError = String(msg);
       }
     );
   }
@@ -334,6 +199,9 @@ var ADDIN_CONFIG = {
       }
     },
     function(events) {
+      debugLog('Eventos recibidos del servidor: ' + events.length);
+      debugSample('rawExceptionEvents', events);
+
       if (!events || events.length === 0) {
         setStatus('ok', 'Sin eventos en la última hora');
         updateStats(0, 0, 0); renderTable([]); clearAlerts();
@@ -354,11 +222,16 @@ var ADDIN_CONFIG = {
           (rules || []).forEach(function(r) { ruleCache[r.id] = r.name || ''; });
           processEvents(events, now);
         },
-        function() { processEvents(events, now); }
+        function(err) { 
+          debugLog('Aviso: Cargando sin nombres de reglas.');
+          processEvents(events, now); 
+        }
       );
     },
     function(err) {
-      setStatus('error', 'Error Geotab: ' + (err.message || err));
+      var msg = err.message || err;
+      setStatus('error', 'Error Geotab: ' + msg);
+      _debugData.lastApiError = String(msg);
       document.getElementById('btnCheck').disabled = false;
     });
   };
@@ -419,7 +292,7 @@ var ADDIN_CONFIG = {
         });
 
         var msg = alertVehicles.length > 0
-          ? ('⚠ ' + alertVehicles.length + ' vehículo(s) superan el umbral de ' + ADDIN_CONFIG.alertThreshold + ' eventos')
+          ? ('⚠ ' + alertVehicles.length + ' vehículo(s) superan el umbral crítico')
           : 'OK — ningún vehículo supera el umbral';
         setStatus(alertVehicles.length > 0 ? 'warn' : 'ok', msg);
         document.getElementById('btnCheck').disabled = false;
@@ -430,7 +303,7 @@ var ADDIN_CONFIG = {
         tableData = deviceIds.map(function(id) { return byDevice[id]; });
         tableData.sort(function(a, b) { return b.total - a.total; });
         renderTable(tableData);
-        setStatus('ok', 'Listo (sin nombres de vehículos)');
+        setStatus('ok', 'Listo (sin nombres de vehículos resolvedores)');
         document.getElementById('btnCheck').disabled = false;
         updateLastCheck(checkTime);
       }
@@ -440,38 +313,61 @@ var ADDIN_CONFIG = {
   function renderTable(data) {
     var container = document.getElementById('tableContainer');
     if (data.length === 0) {
-      container.innerHTML = '<div class="empty-state"><div class="icon">✅</div>Sin eventos en la última hora</div>';
+      container.innerHTML = '<div style="text-align:center; padding:40px 20px; color:#aaa; font-size:13px;">✅ Sin eventos en la última hora</div>';
       return;
     }
-    var rows = data.map(function(v) {
+
+    var html = '<table style="width:100%; border-collapse:collapse;">';
+    html += '<thead><tr>';
+    html += '<th style="background:#018A80; color:white; padding:8px 12px; font-size:11px; font-weight:600; text-align:left;">Vehículo</th>';
+    html += '<th style="background:#018A80; color:white; padding:8px 12px; font-size:11px; font-weight:600; text-align:left;">Total</th>';
+    html += '<th style="background:#018A80; color:white; padding:8px 12px; font-size:11px; font-weight:600; text-align:left;">Distraído</th>';
+    html += '<th style="background:#018A80; color:white; padding:8px 12px; font-size:11px; font-weight:600; text-align:left;">Celular</th>';
+    html += '<th style="background:#018A80; color:white; padding:8px 12px; font-size:11px; font-weight:600; text-align:left;">Bostezo</th>';
+    html += '<th style="background:#018A80; color:white; padding:8px 12px; font-size:11px; font-weight:600; text-align:left;">Estado</th>';
+    html += '</tr></thead><tbody>';
+
+    for (var i = 0; i < data.length; i++) {
+      var v = data[i];
       var isAlert = v.total >= ADDIN_CONFIG.alertThreshold;
       var isWarn  = v.total >= Math.floor(ADDIN_CONFIG.alertThreshold * 0.7) && !isAlert;
-      var countClass = isAlert ? 'count-alert' : (isWarn ? 'count-warn' : 'count-ok');
-      var tag = isAlert
-        ? '<span class="tag tag-alert">🚨 ALERTA</span>'
-        : (isWarn ? '<span class="tag tag-warn">⚠ Atención</span>' : '<span class="tag tag-ok">✔ OK</span>');
-      var emailBadge = alertsSent[v.deviceId] ? ' <span class="email-sent-badge">📧 Correo enviado</span>' : '';
-      return '<tr class="' + (isAlert ? 'row-alert' : '') + '" data-name="' + escHtml(v.deviceName.toLowerCase()) + '">'
-        + '<td><strong>' + escHtml(v.deviceName) + '</strong></td>'
-        + '<td class="count-cell ' + countClass + '">' + v.total + '</td>'
-        + '<td>' + v.counts.distraccion + '</td>'
-        + '<td>' + v.counts.celular + '</td>'
-        + '<td>' + v.counts.bostezo + '</td>'
-        + '<td>' + tag + emailBadge + '</td>'
-        + '</tr>';
-    }).join('');
-    container.innerHTML = '<table>'
-      + '<thead><tr><th>Vehículo</th><th>Total eventos</th>'
-      + '<th>Conducción distraída</th><th>Uso de celular</th>'
-      + '<th>Bostezo / Somnolencia</th><th>Estado</th></tr></thead>'
-      + '<tbody>' + rows + '</tbody></table>';
+      
+      var rowBg = isAlert ? 'background:#fff0f0;' : (i % 2 === 0 ? 'background:#ffffff;' : 'background:#f9fffe;');
+      var numClassColor = isAlert ? 'color:#e74c3c;' : (isWarn ? 'color:#e67e22;' : 'color:#27ae60;');
+      
+      var tagHtml = '';
+      if (isAlert) {
+        tagHtml = '<span style="background:#fce4e4; color:#c0392b; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700;">🚨 ALERTA</span>';
+      } else if (isWarn) {
+        tagHtml = '<span style="background:#fef3cd; color:#856404; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700;">⚠ Atención</span>';
+      } else {
+        tagHtml = '<span style="background:#d5f5e3; color:#1a7a3c; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700;">OK</span>';
+      }
+      
+      var emailBadge = alertsSent[v.deviceId] ? ' <span style="background:#d5f5e3; color:#1a7a3c; padding:2px 6px; border-radius:10px; font-size:9px; font-weight:600; margin-left:4px;">📧 Enviado</span>' : '';
+
+      html += '<tr style="' + rowBg + '" data-name="' + escHtml(v.deviceName.toLowerCase()) + '">';
+      // Enlace nativo a la vista de dispositivo en MyGeotab
+      html += '<td style="padding:8px 12px; font-size:12px; border-bottom:1px solid #eee;"><a href="#" onclick="event.preventDefault(); window.parent.location.hash=\'device,id:\'+\'' + v.deviceId + '\';" style="color:#2563eb; font-weight:bold; cursor:pointer; text-decoration:underline;">' + escHtml(v.deviceName) + '</a></td>';
+      html += '<td style="padding:8px 12px; font-size:12px; border-bottom:1px solid #eee; font-weight:700; font-size:15px; ' + numClassColor + '">' + v.total + '</td>';
+      html += '<td style="padding:8px 12px; font-size:12px; border-bottom:1px solid #eee;">' + v.counts.distraccion + '</td>';
+      html += '<td style="padding:8px 12px; font-size:12px; border-bottom:1px solid #eee;">' + v.counts.celular + '</td>';
+      html += '<td style="padding:8px 12px; font-size:12px; border-bottom:1px solid #eee;">' + v.counts.bostezo + '</td>';
+      html += '<td style="padding:8px 12px; font-size:12px; border-bottom:1px solid #eee;">' + tagHtml + emailBadge + '</td>';
+      html += '</tr>';
+    }
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
   }
 
   window.filterTable = function() {
     var q = document.getElementById('tableFilter').value.toLowerCase();
-    document.querySelectorAll('#tableContainer tbody tr').forEach(function(r) {
-      r.style.display = (!q || r.dataset.name.indexOf(q) !== -1) ? '' : 'none';
-    });
+    var rows = document.querySelectorAll('#tableContainer tbody tr');
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      r.style.display = (!q || r.getAttribute('data-name').indexOf(q) !== -1) ? '' : 'none';
+    }
   };
 
   function renderAlerts(vehicles, time) {
@@ -479,9 +375,9 @@ var ADDIN_CONFIG = {
     container.innerHTML = '';
     vehicles.forEach(function(v) {
       var div = document.createElement('div');
-      div.className = 'alert-banner';
-      div.innerHTML = '<div class="alert-title">🚨 ALERTA — ' + escHtml(v.deviceName) + '</div>'
-        + '<div class="alert-detail">' + v.total + ' eventos en la última hora'
+      div.style.cssText = 'background:#fff0f0; border-left:4px solid #e74c3c; border-radius:6px; padding:12px 16px; margin-bottom:10px;';
+      div.innerHTML = '<div style="font-weight:700; font-size:13px; margin-bottom:4px; color:#c0392b;">🚨 ALERTA — ' + escHtml(v.deviceName) + '</div>'
+        + '<div style="font-size:12px; color:#666;">' + v.total + ' eventos en la última hora'
         + ' (Distraído: ' + v.counts.distraccion
         + ' | Celular: ' + v.counts.celular
         + ' | Bostezo: ' + v.counts.bostezo + ')'
@@ -499,28 +395,48 @@ var ADDIN_CONFIG = {
       celular: vehicle.counts.celular, bostezo: vehicle.counts.bostezo,
       time_window: ADDIN_CONFIG.timeWindowHours + ' hora(s)',
       check_time: formatTime(time), group: ADDIN_CONFIG.groupName
-    }).then(function() { renderTable(tableData); })
-      .catch(function(err) { console.error('EmailJS error:', err); });
+    }).then(function() { 
+      debugLog('Notificación EmailJS enviada con éxito para ' + vehicle.deviceName);
+      renderTable(tableData); 
+    }).catch(function(err) { 
+      debugLog('Fallo en relay EmailJS: ' + JSON.stringify(err));
+    });
   }
 
   function setStatus(type, msg) {
-    var dotClass = { ok:'dot-ok', warn:'dot-warn', error:'dot-error', loading:'dot-loading' }[type] || 'dot-ok';
-    var prefix = type === 'loading'
-      ? '<span class="spinner"></span>'
-      : '<span class="status-dot ' + dotClass + '"></span>';
-    document.getElementById('statusMsg').innerHTML = prefix + msg;
+    var bar = document.getElementById('statusBarContainer');
+    var dot = document.getElementById('statusDot');
+    
+    if (type === 'loading') {
+      bar.style.borderLeftColor = '#018A80';
+      dot.style.background = '#018A80';
+    } else if (type === 'warn') {
+      bar.style.borderLeftColor = '#e67e22';
+      dot.style.background = '#e67e22';
+    } else if (type === 'error') {
+      bar.style.borderLeftColor = '#e74c3c';
+      dot.style.background = '#e74c3c';
+    } else {
+      bar.style.borderLeftColor = '#27ae60';
+      dot.style.background = '#27ae60';
+    }
+    document.getElementById('statusMsg').innerHTML = '<span style="width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; background:' + dot.style.background + ';"></span>' + msg;
   }
+  
   function updateStats(total, vehicles, alerts) {
     document.getElementById('statTotal').textContent    = total;
     document.getElementById('statVehicles').textContent = vehicles;
     document.getElementById('statAlerts').textContent   = alerts;
   }
+  
   function updateLastCheck(time) {
     document.getElementById('lastCheck').textContent = 'Última revisión: ' + formatTime(time);
   }
+  
   function formatTime(d) {
     return d.toLocaleDateString('es-MX') + ' ' + d.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
   }
+  
   function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
