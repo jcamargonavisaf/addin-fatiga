@@ -813,7 +813,70 @@ var ADDIN_CONFIG = {
   }
 
 })();
+<</div><script>
+(function() {
+  'use strict';
+
+  // 1. Declaración de variables globales del Add-In
+  var geotabApi = null;
+  var refreshTimer = null;
+  var tableData = [];
+  var alertsSent = {};   
+  var ruleCache = {};    
+
+  // 2. REGISTRO OBLIGATORIO EN MYGEOTAB 
+  // Este bloque es el que Geotab busca externamente para conectarse con tu página
+  if (!window.geotab) { window.geotab = {}; }
+  if (!window.geotab.addin) { window.geotab.addin = {}; }
+
+  window.geotab.addin.monitorFatigaDistraccion = function(api, state) {
+    geotabApi = api;
+
+    return {
+      initialize: function(freshApi, freshState, callback) {
+        geotabApi = freshApi;
+        loadConfigFromStorage();
+        initEmailJS();
+        
+        // ¡CRÍTICO! Esta línea le avisa a Geotab que el Add-In terminó de cargar.
+        // Si no se ejecuta, la pantalla se quedará en gris o blanco.
+        callback(); 
+      },
+
+      focus: function(freshApi, freshState) {
+        geotabApi = freshApi;
+        document.getElementById('lblGroup').textContent = ADDIN_CONFIG.groupName;
+        runCheck();
+        startAutoRefresh();
+      },
+
+      blur: function() {
+        stopAutoRefresh();
+      }
+    };
+  };
+
+  // 3. Tus funciones de lógica interna (runCheck, processEvents, sendAlertEmail, etc.)
+  function startAutoRefresh() {
+    stopAutoRefresh();
+    refreshTimer = setInterval(runCheck, ADDIN_CONFIG.refreshMinutes * 60 * 1000);
+  }
+
+  function stopAutoRefresh() {
+    if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+  }
+
+  window.runCheck = function() {
+    // ... Tu lógica para consultar ExceptionEvents usando geotabApi.call ...
+  };
+
+  // ... El resto de tus funciones auxiliares (renderTable, saveConfig, etc.) ...
+
+})();
 </script>
+
+</body>
+</html>>
 
 </body>
 </html>
